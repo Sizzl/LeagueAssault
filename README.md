@@ -7,6 +7,8 @@ A popular game-type modification for Unreal Tournament 1999, first established i
 * [Top](#leagueassault)
   * [History](#history)
   * [Release notes](#release-notes)
+    * [Versions 120-123 beta](#versions-120-123-beta)
+    * [Version 119](#version-119)
     * [Version 118](#version-118)
     * [Version 116 beta](#version-116-beta)
     * [Version 111](#version-111)
