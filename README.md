@@ -1,9 +1,14 @@
+
 # LeagueAssault
 A popular game-type modification for Unreal Tournament 1999, first established in 2001 and used within league and public games hosted by utassault.net and other popular game hosting sites.
 
 **Table of Contents**
-
-[TOCM]
+* [Top](#leagueassault)
+  * [History](#history)
+  * [Release notes](#release-notes)
+    * [Versions 111](#version-111)
+    * [Versions 104](#version-104)
+    * [Versions 100-103](#versions-100-103)
 
 ## History
 Born out of an extension to the popular Unreal Tournament mutator "Eavy Assault Plus", the Advanced Assault project team began working on additional fixes, enhancements and maps to suplement the leagues running at utassault.net.
@@ -15,6 +20,7 @@ Released circa March/April 2001.
 
 Undisclosed bug fixes and changes since version 104, ready for League usage.
 
+-------------
 ### Version 104
 Released circa March 2001. Adds many League related features to aid with match set-up and running.
 
@@ -57,7 +63,7 @@ Cosmetic / bug fixes including the final objective on Bridge.
 
 
 -------------
-### Versions 100, 102, 103
+### Versions 100-103
 Internal / Draft releases circa Q4 2000 / Q1 2001.
 
 Merges many of the EavyAssaultPlus fixes into this release, including but not limited to:
