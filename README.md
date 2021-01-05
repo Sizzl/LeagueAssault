@@ -1,4 +1,5 @@
 
+
 # LeagueAssault
 A popular game-type modification for Unreal Tournament 1999, first established in 2001 and used within league and public games hosted by utassault.net and other popular game hosting sites.
 
@@ -15,6 +16,193 @@ Born out of an extension to the popular Unreal Tournament mutator "Eavy Assault 
 
 ## Release notes
 
+### Version 118
+Released circa June 2001.
+
+Full change list documented and published at [leagueas.utassault.net](https://web.archive.org/web/20010623101046/http://leagueas.utassault.net/).
+
+#### Game Play / Player Related New Features
+
+##### Extended Say/TeamSay Commands
+There are 2 new say commands:
+
+**AdvancedSay**: Similar to standard UT Say command except supports new parameters (see below).
+
+**AdvancedTeamSay**: Similar to standard UT TeamSay command except supports new parameters (see below).
+
+**Parameters**
+
+All of the above extended say commands support the following new parameters. Place these parameters in you text and they will be replaced with the corresponding values. e.g. AdvancedTeamSay I have %HEALTH% Health will be sent to your team mates as "I have 54 Healh" (if you had 54 health).
+
+|Parameter |Description |
+|--|--|
+| %LOCATION% | Inserts your current map location (does not work with all maps). |
+| %HEALTH% | Inserts your current health. |
+| %ARMOUR% | Inserts your current armor amount. |
+| %WEAPON% | Inserts the current weapon your are holding. |
+| %AMMO% | Insert the ammo count of the current weapon your are holding. |
+| %MYNAME% | Inserts your name. |
+| %MYTEAM% |  Inserts your team's name (colour). |
+| %ENEMYTEAM% |  Inserts the opposing team's name (colour). |
+| %OBJECTIVE% | Inserts the name of the nearest objective.  |
+
+
+##### ThrowArmor Command
+
+This new command allows you to throw some or all of your armor in the same way you would your weapon. This allows you to share your armor with your team mates. Executing this command with no parameter will throw the lowest rated armor you are carrying (Order rating: Thigh Pads -> Chest Armor -> Shield Belt). Alternatively you can add a parameter value 1, 2 or 3 after to throw a specific armor item (1:Thigh Pads, 2:Chest Armor, 3:Shield Belt).
+
+##### ChangeTeams Command
+Executing the ChangeTeams command will change a players current team to the opposing team.
+ 
+##### ToggleMute Command
+The ToggleMute command allows message muting. There are 3 options:
+1. Mute OFF.
+2. Mute ENEMY Messages.
+3. Mute ALL Messages.
+
+If a player has mute on it will show next to his name on the scoreboard.
+ 
+##### Echo Command
+Executing the Echo command relays the selected text to your console.
+ 
+##### ShowMatchScore Command
+The ShowMatchScore command will display the score during a match.
+ 
+##### Spawn Protection
+Players are granted a limited period of invulnerability when they spawn. Attackers get 4 seconds of invulnerability, defenders 2 second.
+
+#### Game Play / Player Related Alterations & Fixes
+
+##### Improved Scoreboard
+The scoreboard has been improved to show:
+An individual players packet loss as well as ping.
+Team ping & packet loss.
+A complete objective listing including the status of each (completed / uncompleted) and if completed by whom.
+ 
+##### Spawn with Dual Enforcers
+All players now spawn with Dual Enforcers instead of the previous single Enforcer.
+ 
+##### Auto Cannon Health Reduced
+All auto-cannons have had their health reduced from 220 to 100.
+ 
+##### Changes to Spawn Point Selection System
+The spawn point selection system has been changed so that it no longer considers the players in the same zone or within sight of the spawn point a factor. Spawn point priority is now (from lowest to highest):
+
+1. Any Spawn point which will cause a telefrag.
+2. The last used spawn point.
+3. All other spawn points.
+ 
+#####  Changes to Attacking Team Selection System
+The attacking team selection system has been changes so that it is no longer the first player onto the server that decided which team attacks first but instead the team that won the last round is the team which attacks first.
+
+#### Server / Admin Related Features
+ 
+#####  Game Parameters
+The following game parameters can be found under the [LeagueAS.LeagueAssault] section of the unrealtournament.ini or can be set using the set command.
+
+**bMatchMode** (boolean) (false): Indicates whether the server is in match mode or not. Whilst in match mode the server will keep track of the scores, start each map after a preset time or once everyone has toggled ready, logout all admins and moderators (see below) at the start of a map, set both teams so that they may be no bigger than 1/2 the max number of players, disable team changing and disable practice mode (see below). SHOULD NOT BE SET MANUALLY USE StartMatch COMMAND.
+
+**bPracticeMode** (boolean) (false): Indicates whether the server is in practice mode or not. Practice mode makes all players invulnerable and allows them to execute the SummonItem command to summon any item from the botpack package. SHOULD NOT BE SET MANUALLY USE TogglePracticeMode COMMAND.
+
+**bAttackOnly** (boolean) (false): Indicates that the server should only play 1 round of each map, only 1 team gets the chance to attack after the attack is complete the server switches to the next map.
+
+**bStandardise** (boolean) (true): Indicates whether or not to force standard game speed, air control etc settings.
+
+**bAdminNameScore** (boolean) (false): Indicates whether to show the match score under the servers Admin Name option, allows the match score to be shown on a web site etc using programs such as qstat. If no match is in progress it will display "OPEN - PUBLIC" if the server is not passworded and "CLOSED - PRIVATE" if it is.
+
+**MatchLength** (integer) (14): The length in maps of a match. 
+
+**FirstMapStartTime** (integer) (300): The time in seconds the first map should force start after the StartMatch command has been executed.
+
+**SubsequentMapStartTime** (integer) (60): The time in seconds each subsequent map should force start.
+
+**TeamNameRed** (string) (Red): The team name for the red team (used only if  bMatchMode is true).
+
+**TeamNameBlue** (string) (Blue): The team name for the blue team (used only if bMatchMode is true).
+
+**ModeratorPassword** (string) (moderator): The password required to login as moderator (see below).
+
+**MatchPasswordRed** (string) (): The password required to join the red team (used only if bMatchMode is true).
+
+**MatchPasswordBlue** (string) (): The password required to join the blue team (used only if bMatchMode is true).
+
+**MatchPasswordSpec** (string) (): The password required to join as a spectator (used only if bMatchMode is true).
+
+ 
+#####  Admin Commands
+The following commands may be executed by a server admin only and must be proceeded by the admin command (e.g admin StartMatch):
+StartMatch: Requires that Tournament Mode be active. Resets the scores and initiates a new match. The first map will start after a period of time designated by FirstMapStartTime and each subsequent map after a period of time designated by SubsequentMapStartTime. The match will end after MatchLength maps at which point the server will pause not restarting the map and will disable match mode. The admin should then simply change/restart the map to return it to normal play.
+
+**EndMatch**: Instructs the server to terminate the match after the current map is complete.
+
+**ResetTeamNames**: Rests the team names to "Red" and "Blue".
+
+**TogglePracticeMode**: Toggles practice mode on and off.
+
+**StopCountDown**: Stops the game timer.
+
+**VoidMapRed** & **VoidMapBlue**: Each command removes 1 point from the respective teams score during a match, used to correct the score if a map played needs to be voided.
+
+ 
+##### Server Moderators
+Players may login/logout as moderator (with the correct password designated by the ModeratorPassword parameter). A player logged in as moderator will have his/her name shown in green. Moderators may execute some commands previously restricted to admins only:
+**ModeratorLogin <password>**: Logs a player in as a moderator.
+
+**ModeratorLogout**: Logs out a moderator.
+
+**Moderator <command>**: Executes a command as a moderator. Valid commands are servertravel, kick, summon and stopcountdown.
+
+
+#### Map Changes
+**Asthenosphere**
+ - Fixed air vent block exploit
+
+**GuardiaAL**
+ - Removed all Flak ammo
+
+-------------
+### Version 116 beta
+Released circa 
+
+#### Map Changes
+**Asthenosphere**
+ - Replaced the shock ammo in the air vents with Health Vials
+ - Added thigh pads to same spot in air vents
+ - Replaced 1 Shock Ammo in each of the final defensive spawn points
+ - Took away 1 rocket pack (leaving of of each).
+
+**Ballistic**
+ - Fixed generator sniper shot exploit; unfortunately it is not possible to fix the spawn point problem in the mod :(
+
+**RiverbedAL**
+ - Took the steel boxes out of the main entrance of at the request of GRZ (to save a map update for something so minor).
+
+**OceanFloorAL**
+ - Removed AI monsters/fish.
+
+#### Bug Fixes
+
+- Spectator bug has been fixed (well more circumvented but its not possible anymore either way).
+- Scoreboard now looks ok at 640x480 resolution.
+- Moderators can now issue the full set of commands available to them.
+
+#### New Features
+
+- Moderators logged in now show in Green.
+- ToggleMute function allows you mute either all messages or just those from the opposite team.
+- AdvancedSay and AdvancedTeamSay commands from AdvancedAS are in.
+- ThrowArmour command from AdvancedAS is in.
+- Remote server setup facilities added. Will now allow setup of servers from a remote application, and soon from a completely automated server setup system.
+- Cannot change teams AT ALL, during a match
+- Team names are now only used during matches
+- Tournament mode automatically disabled at the end of a match
+- Echo command from AdvancedAS is in.
+
+#### In development
+
+Client Options - potential for future authorisation system to prevent mercs.
+
+-------------
 ### Version 111
 Released circa March/April 2001.
 
@@ -81,4 +269,6 @@ Merges many of the EavyAssaultPlus fixes into this release, including but not li
 **Bridge**
 - Various string (name / description) fixes for objectives
 
+**Overlord**
+ - Flag shot explot fixed (objective resized)
 

@@ -13,7 +13,8 @@ var int Counter, Count;
 replication {
 
     Reliable if (Role<Role_Authority)
-		ModeratorLogin, ModeratorLogout, Moderator, ShowMatchScore, ChangeTeams, SummonItem;
+		ModeratorLogin, ModeratorLogout, Moderator, ShowMatchScore, ChangeTeams, 
+		SummonItem, ToggleMute, Echo, AdvancedTeamSay, AdvancedSay, ThrowArmour;
 
 }
 //************************************************************************************************
@@ -73,31 +74,41 @@ exec function ModeratorLogout()
 //************************************************************************************************
 exec function Moderator( string CommandLine )
 {
-	local string Command;
+	local string Command;																	
 	
 	If (LeagueAssaultGame.IsAModerator(PlayerPawn(PlayerOwner)))
 		{
-		Command = Left(CommandLine, InStr(CommandLine, " "));		
+		CommandLine = CommandLine$" "; //Append a space
+		Command = Left(CommandLine, InStr(CommandLine, " "));
 		if ((Command) ~= "servertravel")
 			{
 			ConsoleCommand( CommandLine );
 			Log(PlayerOwner.PlayerReplicationInfo.PlayerName@"issued moderator command:"@CommandLine$".");
 			}
-		else if ( (Command ~= "kick") || (Command ~= "summon") || (Command ~= "stopcountdown") )
+		else if ( Command ~= "kick" )
 			{
 			PlayerPawn(PlayerOwner).bAdmin = true;
 			PlayerPawn(PlayerOwner).Kick(Mid(CommandLine, (InStr(CommandLine, " ") + 1), (Len(CommandLine) - InStr(CommandLine, " "))));
 			PlayerPawn(PlayerOwner).bAdmin = false;
 			Log(PlayerOwner.PlayerReplicationInfo.PlayerName@"issued moderator command:"@CommandLine$".");
 			}
+		else if ( Command ~= "summon" )
+			{
+			PlayerPawn(PlayerOwner).bAdmin = true;
+			PlayerPawn(PlayerOwner).Summon(Mid(CommandLine, (InStr(CommandLine, " ") + 1), (Len(CommandLine) - InStr(CommandLine, " "))));
+			PlayerPawn(PlayerOwner).bAdmin = false;
+			Log(PlayerOwner.PlayerReplicationInfo.PlayerName@"issued moderator command:"@CommandLine$".");
+			}
+		else if	( Command ~= "stopcountdown" )
+			StopCountDown();
 		else
-			PlayerOwner.ClientMessage("Unrecognised or Unauthorised command.");
+			PlayerOwner.ClientMessage("Unrecognised or unauthorised command.");
 		}
 }
 //************************************************************************************************
 exec function StopCountDown()
 {
-	if ( !LeagueAssaultGame.bGameEnded || PlayerPawn(PlayerOwner).bAdmin || (Level.Netmode == NM_Standalone))
+	if ( !LeagueAssaultGame.bGameEnded && (PlayerPawn(PlayerOwner).bAdmin || LeagueAssaultGame.IsAModerator(PlayerPawn(PlayerOwner)) || (Level.Netmode == NM_Standalone)))
 		{
 		LeagueAssaultGame.GameReplicationInfo.bStopCountDown = True;
 		LeagueAssaultGame.GameReplicationInfo.RemainingTime = 0;
@@ -120,6 +131,54 @@ exec function ChangeTeams()
 	LeagueAssaultGame.PEFChangeTeams(PlayerPawn(PlayerOwner));
 }
 //************************************************************************************************
+exec function ToggleMute()
+{
+	local LeagueAS_ClientOptions CO;
+	local LeagueAS_ExtPlayerReplicationInfo ePRI;
+	
+	foreach AllActors(class'LeagueAS_ClientOptions', CO)
+		if(PlayerOwner == CO.Owner)
+			break;
+
+	If ( CO.bMuteSay )
+		{
+		If ( CO.bMuteAll )
+			{
+			CO.bMuteSay = False;
+			CO.bMuteAll = False;
+			PlayerPawn(Owner).ClientMessage("Mute OFF.");
+			}
+		else
+			{
+			CO.bMuteSay = True;
+			CO.bMuteAll = True;
+			PlayerPawn(Owner).ClientMessage("Mute ALL Messages.");
+			}
+		}
+	else
+		{
+		CO.bMuteSay = True;
+		CO.bMuteAll = False;
+		PlayerPawn(Owner).ClientMessage("Mute ENEMY Messages.");
+		}
+	
+	//Update ePRI
+	foreach AllActors(class'LeagueAS_ExtPlayerReplicationInfo', ePRI)
+        if( PlayerOwner == ePRI.Owner )
+			{
+			ePRI.bMuteSay = CO.bMuteSay;
+			ePRI.bMuteAll = CO.bMuteAll;
+			}
+
+	CO.CopyMuteOption(CO.bMuteSay, CO.bMuteAll);
+
+}
+//************************************************************************************************
+exec function Echo (string EchoStr)
+{
+	PlayerPawn(PlayerOwner).ClientMessage(EchoStr);
+}
+//************************************************************************************************
 exec function SummonItem(string ClassName)
 {	
 	local class<actor> NewClass;
@@ -132,6 +191,21 @@ exec function SummonItem(string ClassName)
 		BroadcastMessage(PlayerOwner.PlayerReplicationInfo.PlayerName@"-> Summon"@ClassName, true, 'CriticalEvent');
 		}
 		
+}
+//************************************************************************************************
+exec function AdvancedTeamSay(string text)
+{	
+	LeagueAssaultGame.PEFAdvancedTeamSay(text, PlayerPawn(PlayerOwner));		
+}
+//************************************************************************************************
+exec function AdvancedSay(string text)
+{	
+	LeagueAssaultGame.PEFAdvancedSay(text, PlayerPawn(PlayerOwner));		
+}
+//************************************************************************************************
+exec function ThrowArmour(int ArmourType)
+{	
+	LeagueAssaultGame.PEFThrowArmour(ArmourType, PlayerPawn(PlayerOwner));
 }
 //************************************************************************************************
 function ActivateSpawnProtection()

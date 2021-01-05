@@ -85,11 +85,6 @@ function ShowScores( canvas Canvas )
 			Canvas.StrLen("TEXT", XL, YL);
 			Canvas.DrawColor = AltTeamColor[Ordered[I].Team];
 			YOffset = ScoreStart + (LoopCountTeam[Ordered[I].Team] * (YL - 8)) + 2;
-			//if (( Ordered[I].Team > 1 ) && ( PlayerCounts[Ordered[I].Team-2] > 0 ))
-			//{
-			//	BottomSlot[Ordered[I].Team] = 1;
-			//	YOffset = ScoreStart + YL*11 + LoopCountTeam[Ordered[I].Team]*YL;
-			//}
 
 			// Draw Name and Ping
 			if ( (Ordered[I].Team < 2) && (BottomSlot[Ordered[I].Team] == 0) && (PlayerCounts[Ordered[I].Team+2] == 0))
@@ -141,29 +136,13 @@ function ShowScores( canvas Canvas )
 			Canvas.SetPos(XOffset + (Canvas.ClipX/4) - XL, YOffset + 8);
 			Canvas.DrawText("P/L:"$PadOut(string(TeamPLs[i] / PlayerCounts[i]))$"%", false);
 
-			//Canvas.StrLen(TeamName[i], XL, YL);
-			//Canvas.SetPos(XOffset + (Canvas.ClipX/4) - XL, YOffset);
-			//Canvas.Font = MyFonts.GetMediumFont( Canvas.ClipX );
-			//Canvas.DrawColor = TeamColor[i];
-
-			//if ( PlayerCounts[i] > 4 )
-			//{
-			//	if ( i < 2 )
-			//		YOffset = ScoreStart + YL*8;
-			//	else
-			//		YOffset = ScoreStart + YL*19;
-			//	Canvas.Font = MyFonts.GetSmallFont( Canvas.ClipX );
-			//	Canvas.SetPos(XOffset, YOffset);
-			//	if (LongLists[i] == 0)
-			//		Canvas.DrawText(PlayerCounts[i] - 4 @ PlayersNotShown, false);
-			//}
 		}
 	}
 
 	//Objective Info
 	if ( Canvas.ClipX > 512 )
 		{
-		StartTop = (Canvas.ClipY / 2);
+		StartTop = ((Canvas.ClipY / 5) * 3);
 		Canvas.Font = MyFonts.GetMediumFont( Canvas.ClipX );
 		Canvas.DrawColor = GoldColor;
 		Canvas.StrLen("Objectives", XL, YL);
@@ -222,28 +201,51 @@ function ShowScores( canvas Canvas )
 //************************************************************************************************
 function DrawNameAndPing(Canvas Canvas, PlayerReplicationInfo PRI, float XOffset, float YOffset, bool bCompressed)
 {
-	local float XL, YL, XL2, YL2, YB;
+	local float XL, YL, YB;
 	local BotReplicationInfo BRI;
 	local String S, O, L;
 	local Font CanvasFont;
-	local bool bAdminPlayer;
+	local bool bAdminPlayer, bModeratorPlayer;
 	local PlayerPawn PlayerOwner;
-	local int Time;
+	local int Time, i;
+	local LeagueAS_ExtPlayerReplicationInfo ePRI;
 
 	PlayerOwner = PlayerPawn(Owner);
-
+	
+	//Find ePRI for player
+	for (i=0; i<32; i++)
+		{
+		If ( (LeagueAS_GameReplicationInfo(OwnerGame).ePRIArray[i] != None) && (LeagueAS_GameReplicationInfo(OwnerGame).ePRIArray[i].Owner == PRI.Owner) )
+			{
+			ePRI = LeagueAS_GameReplicationInfo(OwnerGame).ePRIArray[i];
+			break;
+			}
+		}
+	
 	bAdminPlayer = PRI.bAdmin;
-	//bModeratorPlayer = ExtendedAssault(Level.Game).IsAModerator(PlayerPawn(PRI.Owner));
+	bModeratorPlayer = ePRI.bModerator;
 
 	// Draw Name
 	if (PRI.PlayerName == PlayerOwner.PlayerReplicationInfo.PlayerName)
 		Canvas.DrawColor = GoldColor;
 
+	if ( bModeratorPlayer )
+		Canvas.DrawColor = GreenColor;
 	if ( bAdminPlayer)
 		Canvas.DrawColor = WhiteColor;
 
 	Canvas.SetPos(XOffset, YOffset);
-	Canvas.DrawText(PRI.PlayerName, False);
+	
+	If ( (ePRI != None) && (ePRI.PlayerName != "") && LeagueAS_GameReplicationInfo(OwnerGame).bMatchModeEnabled )
+		{
+		If ( ePRI.BClanTagBefore )
+			Canvas.DrawText(ePRI.ClanName@ePRI.PlayerName, False);
+		else
+			Canvas.DrawText(ePRI.PlayerName@ePRI.ClanName, False);
+		}
+	else
+		Canvas.DrawText(PRI.PlayerName, False);
+	
 	Canvas.StrLen(PRI.PlayerName, XL, YB);
 
 	if ( Canvas.ClipX > 512 )
@@ -254,24 +256,31 @@ function DrawNameAndPing(Canvas Canvas, PlayerReplicationInfo PRI, float XOffset
 
 		if (Level.NetMode != NM_Standalone)
 		{
-			if ( !bCompressed || (Canvas.ClipX > 640) )
-			{
-				// Draw Time
-				Time = Max(1, (Level.TimeSeconds + PlayerOwner.PlayerReplicationInfo.StartTime - PRI.StartTime)/60);
-				Canvas.StrLen(TimeString$":     ", XL, YL);
-				Canvas.SetPos(XOffset - XL - 6, YOffset);
-				Canvas.DrawText(TimeString$":"@Time, false);
-			}
-
 			// Draw Ping
-			Canvas.StrLen(PingString$":     ", XL2, YL2);
-			Canvas.SetPos(XOffset - XL2 - 6, YOffset + (YL+1));
+			Canvas.StrLen(PingString$":     ", XL, YL);
+			Canvas.SetPos(XOffset - XL - 6, YOffset);
 			Canvas.DrawText(PingString$":"@PRI.Ping, false);
 
 			// Draw Packetloss
 			Canvas.StrLen(LossString$":    %", XL, YL);
-			Canvas.SetPos(XOffset - XL - 6, YOffset + (YL+1)*2);
+			Canvas.SetPos(XOffset - XL - 6, YOffset + (YL+1));
 			Canvas.DrawText(LossString$":"@PRI.PacketLoss$"%", false);
+
+			if ( !bCompressed && (Canvas.ClipX > 640) )
+			{
+				If ((ePRI != None) && (ePRI.bMuteSay || ePRI.bMuteAll) )
+					{
+					Canvas.DrawColor = RedColor;
+					Canvas.StrLen("          ", XL, YL);
+					Canvas.SetPos(XOffset - XL - 6, YOffset + (YL+1)*2);
+					If ( ePRI.bMuteAll )
+						Canvas.DrawText("MUTE ALL", false);
+					else
+						Canvas.DrawText("MUTE ENEMY", false);
+					Canvas.DrawColor = WhiteColor;
+					}
+			}
+
 		}
 		Canvas.Font = CanvasFont;
 	}
@@ -286,20 +295,6 @@ function DrawNameAndPing(Canvas Canvas, PlayerReplicationInfo PRI, float XOffset
 	if (Canvas.ClipX < 512)
 		return;
 
-	// Draw Objectives and Assists
-	//if ( !bCompressed && (PRI.Team == ExtendedAssault(Level.Game).Attacker.TeamIndex) )
-	//	{
-	//	CanvasFont = Canvas.Font;
-	//	Canvas.Font = Font'SmallFont';
-	//	L = "Objectives:"@LeagueAS_GameReplicationInfo(PlayerPawn(Owner).GameReplicationInfo).ObjCompleted[PRI.PlayerID];
-	//	Canvas.SetPos(XOffset, YOffset + YB);
-	//	Canvas.DrawText(L, False);
-	//	O = "Assists:"@LeagueAS_GameReplicationInfo(PlayerPawn(Owner).GameReplicationInfo).ObjAssists[PRI.PlayerID];
-	//	Canvas.StrLen(O, XL2, YL2);
-	//	Canvas.SetPos(XOffset, YOffset + YB + YL2);
-	//	Canvas.DrawText(O, False);
-	//	Canvas.Font = CanvasFont;
-	//	}
 }
 //************************************************************************************************
 

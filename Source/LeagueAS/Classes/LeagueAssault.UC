@@ -3,12 +3,11 @@
 //=============================================================================
 class LeagueAssault extends Assault config;
 
+var() config bool bAttackOnly;
 var() config bool bMatchMode;
 var() config bool bPracticeMode;
-var() config bool bAdminOnlySpectators;
 var() config bool bStandardise;
 var() config bool bAdminNameScore;
-var() config int MapVoteChangeLimit;
 var() config int TeamScore[2];
 var() config int MapsLeft;
 var() config int MatchLength;
@@ -20,12 +19,14 @@ var() config string MapsWon[2];
 var() private config string ModeratorPassword;
 var() private config string MatchPasswordRed;
 var() private config string MatchPasswordBlue;
+var() private config string MatchPasswordSpec;
 
 var string VersionStr;
 var LeagueAS_GameReplicationInfo LeagueASGameReplicationInfo;
 var private PlayerPawn ModList[12];
 var bool bGameStarted, MapsTweaked;
 var float TeamChangeTime;
+var LeagueAS_ServerSetupDataLink ServerSetupDataLink;
 
 //************************************************************************************************
 //TweakMaps: Alters some Assault maps to fix bugs and improve gameplay.
@@ -39,6 +40,8 @@ function TweakMaps()
 	local rotator R;
 	local TeamTrigger T;
 	local TeamCannon TC;
+	local ThighPads TP;
+	local PlayerStart PS;
 
 	if ( MapsTweaked )
 		return;
@@ -189,16 +192,28 @@ function TweakMaps()
 					FortStandard(A).FortName = "Nuclear strike";
 					FortStandard(A).DestroyedMessage = "underway!";
 					}
+				if ( SA ~= "FortStandard1" )
+					{
+					A.SetCollisionSize(A.CollisionRadius, A.CollisionHeight * 2/3);
+					}
 				}
 			//////////////AS-Asthenosphere//////////////
 			else if ( S ~= "AS-Asthenosphere" )
 			{
 				if ( (SA ~= "Mover21") || (SA ~= "Mover26") )
 					Mover(A).MoverEncroachType = ME_CrushWhenEncroach;
-				else if ( (SA ~= "ShockCore4") || (SA ~= "ShockCore13") || (SA ~= "ShockCore15") || (SA ~= "ShockCore14")	)
+				else if ( (SA ~= "ShockCore4") || (SA ~= "ShockCore15") )
 					A.Destroy();
+				else if ( (SA ~= "RocketPack9") || (SA ~= "RocketPack11") )
+					A.Destroy();
+				else if ( (SA ~= "ShockCore20") || (SA ~= "ShockCore19") || (SA ~= "ShockCore11") || (SA ~= "ShockCore12")	)
+					{
+					BaseMutator.ReplaceWith(A, "BotPack.HealthVial");
+					A.Destroy();
+					}
 				else if ( SA ~= "FortStandard8" )
 					{
+					//Anti-Spawn Cannons
 					V.X = 0;
 					V.Y = -5628;
 					V.Z = 40.4;
@@ -211,9 +226,59 @@ function TweakMaps()
 					V.Y = -4848;
 					TC = Spawn(class'TeamCannon', FortStandard(A), FortStandard(A).Tag, V, R);
 					TC.ProjectileType = Class'RocketMk2';
+
+					//Thigh pads
+					V.X = -336;
+					V.Y = -11800;
+					V.Z = -32;
+					R.Pitch = 0;
+					R.Roll = 0;
+					R.Yaw = 0;
+					TP = Spawn(class'ThighPads', FortStandard(A), FortStandard(A).Tag, V, R);
+					V.X = 336;
+					V.Y = -11800;
+					V.Z = -32;
+					R.Pitch = 0;
+					R.Roll = 0;
+					R.Yaw = 0;
+					TP = Spawn(class'ThighPads', FortStandard(A), FortStandard(A).Tag, V, R);
 					}
 			}
+			//////////////AS-OceanFloorAL//////////////
+			else if ( S ~= "AS-OceanFloorAL" )
+			{
+				if ( A.IsA('Squid') || A.IsA('GiantManta') || A.IsA('Devilfish') )
+					A.Destroy();
+
+			}
+			//////////////AS-RiverbedAL//////////////
+			else if ( S ~= "AS-RiverbedAL" )
+			{
+				if ( (SA ~= "SteelBox0") || (SA ~= "SteelBox2") )
+					A.Destroy();
+
+			}
+			//////////////AS-GuardiaAL//////////////
+			else if ( S ~= "AS-GuardiaAL" )
+			{
+				if ( A.IsA('FlakAmmo') )
+					A.Destroy();
+
+			}
 		}
+}
+//************************************************************************************************
+//SetPassword. Used by datalink to set the passwords
+//************************************************************************************************
+function SetPassword(int Team, string Pass)
+{
+	if (Team == 0)
+		MatchPasswordRed = Pass;
+	else if (Team == 1)
+		MatchPasswordBlue = Pass;
+	else if (Team == 2)
+		ModeratorPassword = Pass;
+	//SaveConfig();
 }
 //************************************************************************************************
 //SetScoreStrings. Sets the scores.
@@ -247,6 +312,7 @@ function int GetWinningTeam()
 function AddModerator(PlayerPawn Moderator, string Password)
 {
    local int i;
+   local LeagueAS_ExtPlayerReplicationInfo ePRI;
 
    if (ModeratorPassword == "")
 		return;   
@@ -255,13 +321,14 @@ function AddModerator(PlayerPawn Moderator, string Password)
    		{
    		log(Moderator.PlayerReplicationInfo.PlayerName@"became a server moderator.", 'LeagueAssault');
 		BroadcastMessage(Moderator.PlayerReplicationInfo.PlayerName@"became a server moderator.");
-   
+
+		//Add to moderator list
    		for(i=0;i<12;i++)
    			{
       		while((ModList[i]==None))
       			{
          		ModList[i] = Moderator;
-         		return;
+				return;
       			}
    			}
 		}
@@ -291,19 +358,210 @@ function bool IsAModerator(PlayerPawn Moderator)
 function RemoveModerator(PlayerPawn Moderator)
 {
    local int i;
+   local LeagueAS_ExtPlayerReplicationInfo ePRI;
    
    for(i=0;i<12;i++)
    	{
       if(ModList[i] == Moderator)
       	{
-         ModList[i] = None;
-   		 log(Moderator.PlayerReplicationInfo.PlayerName@"gave up moderator abilities.", 'LeagueAssault');
-		 BroadcastMessage(Moderator.PlayerReplicationInfo.PlayerName@"gave up moderator abilities.");
+        ModList[i] = None;
+   		log(Moderator.PlayerReplicationInfo.PlayerName@"gave up moderator abilities.", 'LeagueAssault');
+		BroadcastMessage(Moderator.PlayerReplicationInfo.PlayerName@"gave up moderator abilities.");
       	}
    	}
 }
 //************************************************************************************************
+//DistanceFrom: Returns the distance between 2 actors.
+//************************************************************************************************
+function float DistanceFrom(Actor P1, Actor P2)
+{
+	
+	local float DistanceX, DistanceY, DistanceZ, ADistance;
+
+	DistanceX = P1.Location.X - P2.Location.X;
+	DistanceY = P1.Location.Y - P2.Location.Y;
+	DistanceZ = P1.Location.Z - P2.Location.Z;
+
+	ADistance = sqrt(Square(DistanceX) + Square(DistanceY) + Square(DistanceZ));
+
+	return ADistance;
+
+}
+//************************************************************************************************
+//NearestObj: Returns the name of the nearest objective (Fort Standard).
+//************************************************************************************************
+function string NearestObj(PlayerPawn Sender)
+{
+	local FortStandard F, NearestFort;
+	local float DistToNearestFort;
+
+	DistToNearestFort = 100000000000000000000000000000;
+	
+	ForEach AllActors(class'FortStandard', F)     
+		if (DistanceFrom(Sender, F) < DistToNearestFort)
+			{
+			NearestFort = F;
+			DistToNearestFort = DistanceFrom(Sender, F);
+			}
+
+
+	if (NearestFort.FortName == "Assault Target")
+		return string(NearestFort);
+	else if ((NearestFort.FortName == "") || (NearestFort.FortName == " "))
+		return string(NearestFort);
+	else
+		return NearestFort.FortName;
+
+}
+//************************************************************************************************
+//GetArmourAmount: Returns the amount of armour a pawn has.
+//************************************************************************************************
+function int GetArmourAmount(Pawn P)
+{
+	local int ArmorAmount;
+	local inventory inv;
+
+	ArmorAmount = 0;
+	for( Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory ) 
+		if (Inv.bIsAnArmor) 
+			ArmorAmount += Inv.Charge;
+
+
+   Return ArmorAmount;
+
+}
+//************************************************************************************************
+//ProcessAdvancedSay: Processes advanced say strings. Used by AdvancedSay and Teamsay 
+//************************************************************************************************
+function string ProcessAdvancedSay(string text, PlayerPawn Sender)
+{
+	local string TagName, FinalText, LocationStr, C;
+	local bool StartTag;
+	local int i;
+
+	for(i=0; i<len(text); i++)
+		{
+		C = Mid(Text, i, 1);
+		if (C == "%")
+			{
+			if (StartTag)
+				{
+				if (TagName ~= "LOCATION")
+					{
+					if ( Sender.PlayerReplicationInfo.PlayerLocation != None )
+						LocationStr = Sender.PlayerReplicationInfo.PlayerLocation.LocationName;
+					else if ( Sender.PlayerReplicationInfo.PlayerZone != None )
+						LocationStr = Sender.PlayerReplicationInfo.PlayerZone.ZoneName;
+					else 
+						LocationStr = "UNKNOWN";
+
+					If (LocationStr == "")
+						LocationStr = "UNKNOWN";
+
+					FinalText = FinalText$LocationStr;
+					}
+				else if (TagName ~= "HEALTH")
+					FinalText = FinalText$string(Sender.Health);
+				else if (TagName ~= "ARMOUR")
+					FinalText = FinalText$string(GetArmourAmount(Sender));
+				else if (TagName ~= "WEAPON")
+					FinalText = FinalText$Sender.Weapon.ItemName;
+				else if (TagName ~= "AMMO")
+					FinalText = FinalText$string(Sender.Weapon.AmmoType.AmmoAmount);
+				else if (TagName ~= "MYNAME")
+					FinalText = FinalText$Sender.PlayerReplicationInfo.PlayerName;
+				else if (TagName ~= "MYTEAM")
+					FinalText = FinalText$TeamColor[Sender.PlayerReplicationInfo.Team];
+				else if (TagName ~= "ENEMYTEAM")
+					{
+					if (Sender.PlayerReplicationInfo.Team == 0)
+						FinalText = FinalText$TeamColor[1];
+					else
+						FinalText = FinalText$TeamColor[0];
+					}
+				else if (TagName ~= "OBJECTIVE")
+					FinalText = FinalText$NearestObj(Sender);
+				}
+			else
+				TagName = "";
+			StartTag = !StartTag;
+			}
+		else if (StartTag)
+			TagName = TagName$C;
+	   	else
+			FinalText = FinalText$C;
+		}
+
+	return FinalText;
+
+}
+//************************************************************************************************
 //PEF Functions are executed by players from LeagueAS_Inventory.
+//************************************************************************************************
+function PEFThrowArmour(int ArmourType, PlayerPawn Sender)
+{
+	local vector X,Y,Z;
+	local inventory Inv;
+
+	if ((ArmourType < 1) || (ArmourType > 3))
+		{
+		Inv = Sender.FindInventoryType(class'ThighPads');
+		If (Inv == None)
+			Inv = Sender.FindInventoryType(class'Armor2');
+		If (Inv == None)
+			Inv = Sender.FindInventoryType(class'UT_ShieldBelt');
+		If (Inv != None)
+			{
+			Inv.Velocity = Vector(Sender.ViewRotation) * 500 + vect(0,0,220);
+			Inv.bTossedOut = true;
+			GetAxes(Sender.Rotation,X,Y,Z);
+			Inv.DropFrom(Sender.Location + 0.8 * Sender.CollisionRadius * X + - 0.5 * Sender.CollisionRadius * Y);
+			If (Inv.Isa('UT_ShieldBelt'))
+				UT_ShieldBelt(Inv).MyEffect.Destroy();
+			}
+		}
+	else
+		{
+		for( Inv=Sender.Inventory; Inv!=None; Inv=Inv.Inventory ) 
+			{
+			if ((Inv.Isa('ThighPads') && (ArmourType == 1)) || (Inv.Isa('Armor2') && (ArmourType == 2)) || (Inv.Isa('UT_ShieldBelt') && (ArmourType == 3)))
+				{
+				Inv.Velocity = Vector(Sender.ViewRotation) * 500 + vect(0,0,220);
+				Inv.bTossedOut = true;
+				GetAxes(Sender.Rotation,X,Y,Z);
+				Inv.DropFrom(Sender.Location + 0.8 * Sender.CollisionRadius * X + - 0.5 * Sender.CollisionRadius * Y);
+				If (Inv.Isa('UT_ShieldBelt'))
+					UT_ShieldBelt(Inv).MyEffect.Destroy();
+				}
+			}
+		}
+}
+//************************************************************************************************
+function PEFAdvancedTeamSay(string text, PlayerPawn Sender)
+{	
+	local Pawn P;
+	local string FinalMsg;
+	
+	FinalMsg = ProcessAdvancedSay(text, Sender);
+
+	for( P = Level.PawnList; P!=None; P=P.nextPawn )
+        if( P.IsA('PlayerPawn') && (PlayerPawn(P).PlayerReplicationInfo.Team == Sender.PlayerReplicationInfo.Team) )
+			if ( Level.Game.MessageMutator.MutatorTeamMessage(Sender, P, Sender.PlayerReplicationInfo, FinalMsg, 'Say', true) )
+				PlayerPawn(P).TeamMessage( Sender.PlayerReplicationInfo, FinalMsg, 'Say', true );
+}
+//************************************************************************************************
+function PEFAdvancedSay(string text, PlayerPawn Sender)
+{	
+	local Pawn P;
+	local string FinalMsg;
+	
+	FinalMsg = ProcessAdvancedSay(text, Sender);
+
+	for( P = Level.PawnList; P!=None; P=P.nextPawn )
+        if( P.IsA('PlayerPawn') )
+			if ( Level.Game.MessageMutator.MutatorTeamMessage(Sender, P, Sender.PlayerReplicationInfo, FinalMsg, 'Say', true) )
+				PlayerPawn(P).TeamMessage( Sender.PlayerReplicationInfo, FinalMsg, 'Say', true );
+}
 //************************************************************************************************
 function PEFChangeTeams(PlayerPawn Sender)
 {		
@@ -345,14 +603,12 @@ function PEFTogglePracticeMode()
 
 	if ( bPracticeMode )
 		{
-		//BroadcastMessage("SERVER IS IN PRACTICE MODE");
 		for( P = Level.PawnList; P!=None; P=P.nextPawn )		
         	if( P.IsA('PlayerPawn') )
 				P.ReducedDamageType = 'All';
 		}
 	else
 		{
-		//BroadcastMessage("SERVER IS IN PRACTICE MODE");
 		for( P = Level.PawnList; P!=None; P=P.nextPawn )		
         	if( P.IsA('PlayerPawn') )
 				P.ReducedDamageType = '';
@@ -380,6 +636,14 @@ function PEFStartMatch(PlayerPawn Sender)
 		return;
 		}
 	
+	//Set Team Names
+	TeamColor[0] = TeamNameRed;
+	TeamColor[1] = TeamNameBlue;
+	Teams[0].TeamName = TeamNameRed;
+	Teams[1].TeamName = TeamNameBlue;
+	
+	TeamChangeMessage = "Match in progress. Team Changing Disabled!";
+
 	LeagueASGameReplicationInfo.StartTimeRemaining = FirstMapStartTime;						
 	bMatchMode = true;
 	LeagueASGameReplicationInfo.bMatchModeEnabled = true;
@@ -391,6 +655,8 @@ function PEFStartMatch(PlayerPawn Sender)
 	SetScoreStrings(TeamColor[0]@"0 - 0"@TeamColor[1]$".");
 	MapsLeft = MatchLength + 1;
 	bPracticeMode = false;
+	RemainingTime = 120;
+	bDefenseSet = true;
 	SaveConfig();
 }
 //************************************************************************************************
@@ -402,7 +668,7 @@ function PEFEndMatch()
 //************************************************************************************************
 function PEFVoidMap(PlayerPawn Sender, int TeamNum)
 {
-	Sender.ClientMessage("Voided 1 Map...");
+	Sender.ClientMessage("Voided Map...");
 	TeamScore[TeamNum]--;
 	MapsLeft++;
 	PEFShowScores(Sender);
@@ -411,9 +677,7 @@ function PEFVoidMap(PlayerPawn Sender, int TeamNum)
 function PEFShowScores(PlayerPawn Sender)
 {
 	Sender.ClientMessage(TeamColor[0]@" -"@string(TeamScore[0]));
-	//Sender.ClientMessage("("$Team0MapsWon$")");
 	Sender.ClientMessage(TeamColor[1]@" -"@string(TeamScore[1]));
-	//Sender.ClientMessage("("$Team1MapsWon$")");
 	If (MapsLeft==0)
 		Sender.ClientMessage("THE MATCH HAS ENDED!");
 	else if (MapsLeft==1)
@@ -426,23 +690,61 @@ function PEFShowScores(PlayerPawn Sender)
 //************************************************************************************************
 event PreLogin (string Options, string Address, out string Error, out string FailCode)
 {
-	local string InPassword;
+	local string InPassword, OvClass;
 	
 	Super.PreLogin(Options, Address, Error, FailCode);
 
 	InPassword = ParseOption( Options, "Password" );
+	OvClass = ParseOption ( Options, "OverrideClass" );
+
 	if ( bMatchMode && (MatchPasswordRed != "") && (MatchPasswordBlue != "") )
 		{
-		if ( ((Caps(InPassword) == Caps(MatchPasswordRed)) && (Teams[0].Size < (MaxPlayers / 2))) || ((Caps(InPassword) == Caps(MatchPasswordBlue)) && (Teams[1].Size < (MaxPlayers / 2))) )
+		if ( Caps(InPassword) == Caps(MatchPasswordRed) )
+			{
+			if ( Teams[0].Size < (MaxPlayers / 2) )
+				{
+				Error = "";
+				FailCode = "";			
+				}
+			else
+				{
+				Error=MaxedOutMessage;
+				FailCode = "TEAMFULL";
+				}
+			}
+		else if ( Caps(InPassword) == Caps(MatchPasswordBlue) )
+			{
+			if ( Teams[1].Size < (MaxPlayers / 2) )
+				{
+				Error = "";
+				FailCode = "";			
+				}
+			else
+				{
+				Error=MaxedOutMessage;
+				FailCode = "TEAMFULL";
+				}
+			}
+		}
+	else if ( (ModeratorPassword != "") && (Caps(InPassword) == Caps(ModeratorPassword)) )
+		{
+		Error = "";
+		FailCode = "";
+		}
+		
+	//Check for Spectator Pass
+	if ( (Caps(OvClass) == "BOTPACK.CHSPECTATOR") && bMatchMode && (MatchPasswordSpec != "") )
+		{
+		If (Caps(InPassword) == Caps(MatchPasswordSpec))
 			{
 			Error = "";
 			FailCode = "";
 			}
-		}
-	else if (Caps(InPassword) == Caps(ModeratorPassword))
-		{
-		Error = "";
-		FailCode = "";
+		else
+			{
+			Error = WrongPassword;
+			FailCode = "WRONGPW";
+			}
 		}
 
 }
@@ -450,10 +752,22 @@ event PreLogin (string Options, string Address, out string Error, out string Fai
 event playerpawn Login (string Portal, string Options, out string Error, class<playerpawn> SpawnClass)
 {
 	local PlayerPawn NewPlayer;
-	local string InPassword, ModOptions, Pair, Key, Value, OvClass;
+	local LeagueAS_ClientOptions CO;
+	local LeagueAS_ExtPlayerReplicationInfo ePRI;
+	local string InPassword, ModOptions, Pair, Key, Value;
 
 	InPassword = ParseOption ( Options, "Password" );
 	ModOptions = "";
+
+	//Check for full teams again
+	if ( bMatchMode && (MatchPasswordRed != "") && (MatchPasswordBlue != "") )
+		{
+		if ( ((Caps(InPassword) == Caps(MatchPasswordRed)) && (Teams[0].Size >= (MaxPlayers / 2))) || ((Caps(InPassword) == Caps(MatchPasswordBlue)) && (Teams[1].Size >= (MaxPlayers / 2))) )
+			{
+			Error=MaxedOutMessage;
+			return None;
+			}
+		}
 
 	//Modify team option if nessacary.
 	if ( bMatchMode && (MatchPasswordRed != "") && (MatchPasswordBlue != "") && (!ClassIsChildOf(SpawnClass, class'Spectator')) )
@@ -490,23 +804,174 @@ event playerpawn Login (string Portal, string Options, out string Error, class<p
 
 	NewPlayer = Super.Login(Portal, ModOptions, Error, SpawnClass);
 
-	OvClass = ParseOption ( Options, "OverrideClass" );
-	//Check for admin only specs
-	if ( (NewPlayer != None) && bAdminOnlySpectators && bMatchMode && (OvClass ~= "BOTPACK.CHSPECTATOR") && !NewPlayer.bAdmin )
-		{
-		Error = "Administrator only Spectators!";
-		NumSpectators--;
-		return None;
-		}
-
-	//Login moderator if nessacary.
-	if (Caps(InPassword) == Caps(ModeratorPassword))
-		AddModerator(NewPlayer, InPassword);
-
+	//Make invincible if Practice mode
 	if ( bPracticeMode )
 		NewPlayer.ReducedDamageType = 'All';
 
+	//Spawn Client Options & ePRI
+	CO = Spawn(class'LeagueAS_ClientOptions', NewPlayer,, NewPlayer.Location);
+	ePRI = Spawn(class'LeagueAS_ExtPlayerReplicationInfo', NewPlayer,, NewPlayer.Location);
+
+	//Login moderator if nessacary.
+	if ((ModeratorPassword != "") && (Caps(InPassword) == Caps(ModeratorPassword)))
+		AddModerator(NewPlayer, InPassword);
+
 	return NewPlayer;
+
+}
+//************************************************************************************************
+event PostLogin( playerpawn NewPlayer )
+{
+	local LeagueAS_ClientOptions CO;
+
+	Super.PostLogin(NewPlayer);
+
+	//Call client option copy from client to server
+	foreach AllActors(class'LeagueAS_ClientOptions', CO)
+        if(NewPlayer == CO.Owner)
+			CO.CopyOptionsToServer();
+
+}
+//************************************************************************************************
+function PlayerDetailsRecieved(PlayerPawn JoinedPlayer, LeagueAS_ClientOptions CO)
+{
+	local LeagueAS_ExtPlayerReplicationInfo ePRI;
+	
+	//Copy options to ePRI
+	foreach AllActors(class'LeagueAS_ExtPlayerReplicationInfo', ePRI)
+        if( JoinedPlayer == ePRI.Owner )
+			break;
+			
+	ePRI.PlayerName = CO.PlayerName;
+	ePRI.ClanName = CO.ClanName;
+	ePRI.bClanTagBefore = CO.bClanTagBefore;
+	ePRI.bMuteSay = CO.bMuteSay;
+	ePRI.bMuteAll = CO.bMuteAll;
+
+	Log("******************Player Joined******************", 'LeagueAssault');
+	Log("Player Name:"@JoinedPlayer.PlayerReplicationInfo.PlayerName, 'LeagueAssault');
+	Log("League Player Name:"@CO.PlayerName, 'LeagueAssault');
+	Log("League Clan Name:"@CO.ClanName, 'LeagueAssault');
+	Log("League Player Password:"@CO.PlayerPassword, 'LeagueAssault');
+	Log("IP Address:"@JoinedPlayer.GetPlayerNetworkAddress(), 'LeagueAssault');
+	Log("*************************************************", 'LeagueAssault');
+}
+//************************************************************************************************
+function Logout( pawn Exiting )
+{
+	local LeagueAS_ExtPlayerReplicationInfo ePRI;
+	local LeagueAS_ClientOptions CO;
+
+	Super.Logout(Exiting);
+	
+	if ( Exiting.IsA('PlayerPawn') )
+		{
+		//Cleanup ClientOptions
+		foreach AllActors(class'LeagueAS_ClientOptions', CO)
+			if( Exiting == CO.Owner )
+				CO.Destroy();
+
+		//Cleanup ePRI
+		foreach AllActors(class'LeagueAS_ExtPlayerReplicationInfo', ePRI)
+			if( Exiting == ePRI.Owner )
+				ePRI.Destroy();
+
+		//Log out moderator
+		RemoveModerator(PlayerPawn(Exiting));
+		}
+}
+//************************************************************************************************
+function NavigationPoint FindSpawnPoint( Pawn Player, optional byte InTeam, optional string incomingName )
+{
+	local PlayerStart Dest, Candidate[16], Best;
+	local float Score[16], BestScore, NextDist;
+	local pawn OtherPlayer;
+	local int i, num;
+	local Teleporter Tel;
+	local NavigationPoint N;
+	local byte Team;
+
+	if ( bStartMatch && (Player != None) && Player.IsA('TournamentPlayer') 
+		&& (Level.NetMode == NM_Standalone)
+		&& (TournamentPlayer(Player).StartSpot != None) )
+		return TournamentPlayer(Player).StartSpot;
+
+	if ( (Player != None) && (Player.PlayerReplicationInfo != None) )
+		Team = Player.PlayerReplicationInfo.Team;
+	else
+		Team = InTeam;
+
+	if( incomingName!="" )
+		foreach AllActors( class 'Teleporter', Tel )
+			if( string(Tel.Tag)~=incomingName )
+				return Tel;
+
+	if ( Team == 255 )
+		Team = 0;
+				
+	//choose candidates	
+	for ( N=Level.NavigationPointList; N!=None; N=N.nextNavigationPoint )
+	{
+		Dest = PlayerStart(N);
+		if ( (Dest != None) && Dest.bEnabled
+			&& (!bSpawnInTeamArea || (Team == Dest.TeamNumber)) )
+		{
+			if (num<16)
+				Candidate[num] = Dest;
+			else if (Rand(num) < 16)
+				Candidate[Rand(16)] = Dest;
+			num++;
+		}
+	}
+
+	if (num == 0 )
+	{
+		log("Didn't find any player starts in list for team"@Team@"!!!"); 
+		foreach AllActors( class'PlayerStart', Dest )
+		{
+			if (num<16)
+				Candidate[num] = Dest;
+			else if (Rand(num) < 16)
+				Candidate[Rand(16)] = Dest;
+			num++;
+		}
+		if ( num == 0 )
+			return None;
+	}
+
+	if (num>16) 
+		num = 16;
+	
+	//assess candidates
+	for (i=0;i<num;i++)
+	{
+		if ( Candidate[i] == LastStartSpot )
+			Score[i] = -6000.0;
+		else
+			Score[i] = 4000 * FRand(); //randomize
+	}		
+	
+	for ( OtherPlayer=Level.PawnList; OtherPlayer!=None; OtherPlayer=OtherPlayer.NextPawn)	
+		if ( OtherPlayer.bIsPlayer && (OtherPlayer.Health > 0) && !OtherPlayer.IsA('Spectator') )
+			for (i=0; i<num; i++)
+				if ( OtherPlayer.Region.Zone == Candidate[i].Region.Zone ) 
+				{
+					NextDist = VSize(OtherPlayer.Location - Candidate[i].Location);
+					if (NextDist < (Candidate[i].CollisionRadius + Candidate[i].CollisionHeight))
+						Score[i] -= 1000000.0;
+				}
+	
+	BestScore = Score[0];
+	Best = Candidate[0];
+	for (i=1; i<num; i++)
+		if (Score[i] > BestScore)
+		{
+			BestScore = Score[i];
+			Best = Candidate[i];
+		}
+	LastStartSpot = Best;
+				
+	return Best;
 }
 //************************************************************************************************
 function NavigationPoint FindPlayerStart(Pawn Player, optional byte InTeam, optional string incomingName)
@@ -566,7 +1031,7 @@ function NavigationPoint FindPlayerStart(Pawn Player, optional byte InTeam, opti
 			Team = 1;
 	}
 
-	return Super(TeamGamePlus).FindPlayerStart(None, Team, incomingName);
+	return FindSpawnPoint(None, Team, incomingName);
 }
 //************************************************************************************************
 function RestartGame()
@@ -592,8 +1057,8 @@ function RestartGame()
 				CurrentDefender = 1;
 			log("Setting Team "$string(CurrentDefender)$" as the defending team for the next map.", 'LeagueAssault');
 			}
-		else
-			CurrentDefender = 0;
+		//else
+		//	CurrentDefender = 0;
 		
 		SaveConfig();
 
@@ -698,14 +1163,19 @@ function bool SetEndCams(string Reason)
 		MapsLeft--;
 		if ((TeamScore[0] > (TeamScore[1] + MapsLeft)) || (TeamScore[1] > (TeamScore[0] + MapsLeft)))
 			MapsLeft=0;
+		
+		SetScoreStrings(TeamColor[0]@TeamScore[0]@"-"@TeamScore[1]@TeamColor[1]$".");
+		LeagueASGameReplicationInfo.GameEndedComments = LeagueASGameReplicationInfo.GameEndedComments@LeagueASGameReplicationInfo.MatchScore;
+		
 		for( P = Level.PawnList; P!=None; P=P.nextPawn )
         	if( P.IsA('PlayerPawn') )
 			{
-				SetScoreStrings(TeamColor[0]@TeamScore[0]@"-"@TeamScore[1]@TeamColor[1]$".");
-				if (WinningTeam == -1)
-					LeagueASGameReplicationInfo.GameEndedComments = "Tie!"@LeagueASGameReplicationInfo.MatchScore;
-				else
-					LeagueASGameReplicationInfo.GameEndedComments = TeamColor[WinningTeam]@"Wins!"@LeagueASGameReplicationInfo.MatchScore;
+				//SetScoreStrings(TeamColor[0]@TeamScore[0]@"-"@TeamScore[1]@TeamColor[1]$".");
+				//LeagueASGameReplicationInfo.GameEndedComments = LeagueASGameReplicationInfo.GameEndedComments@LeagueASGameReplicationInfo.MatchScore;
+				//if (WinningTeam == -1)
+				//	LeagueASGameReplicationInfo.GameEndedComments = "Tie!"@LeagueASGameReplicationInfo.MatchScore;
+				//else
+				//	LeagueASGameReplicationInfo.GameEndedComments = TeamColor[WinningTeam]@"Wins in"@TimeResult$"!"@LeagueASGameReplicationInfo.MatchScore;
 				P.ClientGameEnded();
 				P.GotoState('GameEnded');
 			}	
@@ -713,6 +1183,7 @@ function bool SetEndCams(string Reason)
 			{
 			bDontRestart = true;
 			bMatchMode = false;
+			bTournament = false;
 			LeagueASGameReplicationInfo.bMatchModeEnabled = false;
 			}
 		}
@@ -739,11 +1210,9 @@ function StartMatch()
 				PlayerPawn(P).PlayerReplicationInfo.bAdmin = false;
 				P.ReducedDamageType = '';
 				}
-		if ( bMatchMode )
-			{
-			for(i=0;i<12;i++)
+		
+		for(i=0;i<12;i++)
 			ModList[i] = None;
-			}
 		}
 
 	if ( bPracticeMode )
@@ -760,6 +1229,7 @@ event timer()
 {
 	local Pawn P;
 	local bool bReady;
+	local LeagueAS_ExtPlayerReplicationInfo ePRI;
 
 	Super.Timer();
 
@@ -831,6 +1301,9 @@ event timer()
    					LeagueASGameReplicationInfo.StartTimeRemaining = -1;
   			}
 		}
+
+	foreach AllActors(class'LeagueAS_ExtPlayerReplicationInfo', ePRI)
+		ePRI.bModerator = IsAModerator(PlayerPawn(ePRI.Owner));
 }
 //************************************************************************************************
 event PreBeginPlay()
@@ -843,6 +1316,9 @@ event PreBeginPlay()
 
 	bGameStarted = false;
 
+	ServerSetupDataLink = spawn(class'LeagueAS_ServerSetupDataLink');
+	ServerSetupDataLink.Initialise();
+
 	LeagueASGameReplicationInfo = LeagueAS_GameReplicationInfo(GameReplicationInfo);
 	
 	class'TeamCannon'.Default.Health=100;
@@ -853,6 +1329,7 @@ event PreBeginPlay()
 	//Set standard AS Settings
 	If ( bStandardise )
 		{
+		bForceRespawn = True;
 		bHardCoreMode = True;
 		bChallengeMode = False;
 		bMultiWeaponStay=True;
@@ -871,12 +1348,10 @@ function bool GetRule( out string Rules, out string Result )
 
 	if( Left(Rules,1)=="\\" )
 	{
-		// Get result.
 		Result = Mid(Rules,1);
 		if( InStr(Result,"\\")>=0 )
 			Result = Left( Result, InStr(Result,"\\") );
 
-		// Update options.
 		Rules = Mid(Rules,1);
 		if( InStr(Rules,"\\")>=0 )
 			Rules = Mid( Rules, InStr(Rules,"\\") );
@@ -899,14 +1374,16 @@ event BeginPlay()
 
 	Super.BeginPlay();
 
-	TeamColor[0] = TeamNameRed;
-	TeamColor[1] = TeamNameBlue;
+	if ( bMatchMode )
+		{
+		TeamColor[0] = TeamNameRed;
+		TeamColor[1] = TeamNameBlue;
+		}
 
 	ServerRules = GetRules();
 
 	while( GetRule( ServerRules, Rule ) )
 		{
-		log(Rule);
 		if( Rule ~= "password" )
 			{
 			GetRule( ServerRules, Rule );
@@ -920,6 +1397,7 @@ event BeginPlay()
 		LeagueASGameReplicationInfo.StartTimeRemaining = SubsequentMapStartTime;
 		SetScoreStrings(TeamColor[0]@TeamScore[0]@"-"@TeamScore[1]@TeamColor[1]$".");
 		LeagueASGameReplicationInfo.bMatchModeEnabled = true;
+		TeamChangeMessage = "Match in progress. Team Changing Disabled!";
 		}
 	else
 		{
@@ -931,10 +1409,9 @@ event BeginPlay()
 			SetScoreStrings("LOCKED - PRIVATE");
 		else
 			SetScoreStrings("OPEN - PUBLIC");
+		TeamChangeMessage = "Type 'ChangeTeams' to change teams.";
 		}
 
-		TeamChangeMessage = "Type 'ChangeTeams' to change teams.";
-	
 	//Set up HUD objective INFO
 	FortCount = 0;
 	ForEach AllActors(class'FortStandard', F)     
@@ -952,32 +1429,97 @@ event BeginPlay()
 	SaveConfig();
 }
 //************************************************************************************************
+event InitGame( string Options, out string Error )
+{
+	local FortStandard F;
+	local name EndCamTag;
+	
+	Super.InitGame(Options, Error);
+
+	TimeLimit = 1;
+	if ( bAttackOnly )
+		{
+		ForEach AllActors(class'FortStandard', F)
+			{
+			TimeLimit = Max(TimeLimit, F.DefenseTime);
+			if ( F.EndCamTag != '' )
+				EndCamTag = F.EndCamTag;
+			}
+
+		RemainingTime = TimeLimit * 60;
+		bDefenseSet = True;
+		SavedTime = 0;
+		}
+	else
+		{
+		if ( SavedTime > 0 )
+			{
+			RemainingTime = SavedTime;
+			ForEach AllActors(class'FortStandard', F)
+				if ( F.EndCamTag != '' )
+					EndCamTag = F.EndCamTag;
+			}
+		else
+			{
+			ForEach AllActors(class'FortStandard', F)
+				{
+				TimeLimit = Max(TimeLimit, F.DefenseTime);
+				if ( F.EndCamTag != '' )
+					EndCamTag = F.EndCamTag;
+				}
+
+			RemainingTime = TimeLimit * 60;
+			}
+		}
+	if ( EndCamTag != '' )
+		ForEach AllActors(class'SpectatorCam', EndCam, EndCamTag)
+			break;
+	GoalTeamScore = 0;
+	FragLimit = 0;
+	bMegaSpeed = false;
+	bUseTranslocator = false;
+	bJumpMatch = false;
+}
+//************************************************************************************************
 function PostBeginPlay()
 {
 	Super.PostBeginPlay();
-	TeamColor[0] = TeamNameRed;
-	TeamColor[1] = TeamNameBlue;
-	Teams[0].TeamName = TeamNameRed;
-	Teams[1].TeamName = TeamNameBlue;
+
+	if ( bMatchMode )
+		{
+		TeamColor[0] = TeamNameRed;
+		TeamColor[1] = TeamNameBlue;
+		Teams[0].TeamName = TeamNameRed;
+		Teams[1].TeamName = TeamNameBlue;
+		}
 }
 //************************************************************************************************
 function SendStartMessage(PlayerPawn P)
 {
 
-	ObjectivesMessage = GameName@VersionStr;
+	ObjectivesMessage = GameName;
 	Super.SendStartMessage(P);
+
+}
+//************************************************************************************************
+function bool ChangeTeam(Pawn Other, int NewTeam)
+{
+
+	if ( (Other.PlayerReplicationInfo.Team != 255) && bMatchMode )
+		return false;
+	else
+		return Super.ChangeTeam(Other, NewTeam);
 
 }
 //************************************************************************************************
 
 defaultproperties
 {
+      bAttackOnly=False
       bMatchMode=False
       bPracticeMode=False
-      bAdminOnlySpectators=False
       bStandardise=True
       bAdminNameScore=False
-      MapVoteChangeLimit=0
       TeamScore(0)=0
       TeamScore(1)=0
       MapsLeft=0
@@ -991,7 +1533,8 @@ defaultproperties
       ModeratorPassword="moderator"
       MatchPasswordRed=""
       MatchPasswordBlue=""
-      VersionStr="V1.11"
+      MatchPasswordSpec=""
+      VersionStr=""
       LeagueASGameReplicationInfo=None
       ModList(0)=None
       ModList(1)=None
@@ -1008,8 +1551,10 @@ defaultproperties
       bGameStarted=False
       MapsTweaked=False
       TeamChangeTime=0.000000
-      ScoreBoardType=Class'LeagueAS111.LeagueAS_Scoreboard'
-      GameName="utassault.net League Assault"
-      MutatorClass=Class'LeagueAS111.LeagueAS_Mutator'
-      GameReplicationInfoClass=Class'LeagueAS111.LeagueAS_GameReplicationInfo'
+      ServerSetupDataLink=None
+      WinMessage="and win!"
+      ScoreBoardType=Class'LeagueAS118.LeagueAS_Scoreboard'
+      GameName="League Assault (Version 1.18)"
+      MutatorClass=Class'LeagueAS118.LeagueAS_Mutator'
+      GameReplicationInfoClass=Class'LeagueAS118.LeagueAS_GameReplicationInfo'
 }

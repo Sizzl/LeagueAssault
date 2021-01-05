@@ -9,11 +9,30 @@ var string FortCompleted[20];
 var string MatchScore;
 var bool bMatchModeEnabled;
 
+var LeagueAS_ExtPlayerReplicationInfo ePRIArray[32];
+
 //************************************************************************************************
 replication {
 
     reliable if ( Role==ROLE_Authority )
-		StartTimeRemaining, FortName, FortCompleted, MatchScore, bMatchModeEnabled;
+		StartTimeRemaining, FortName, FortCompleted, MatchScore, bMatchModeEnabled, ePRIArray;
+
+}
+//************************************************************************************************
+simulated function Timer()
+{
+	local LeagueAS_ExtPlayerReplicationInfo ePRI;
+	local int i;
+
+	Super.Timer();
+		
+	for (i=0; i<32; i++)
+		ePRIArray[i] = None;
+	
+	i=0;
+	foreach AllActors(class'LeagueAS_ExtPlayerReplicationInfo', ePRI)
+		if ( i < 32 )
+			ePRIArray[i++] = ePRI;
 
 }
 //************************************************************************************************
@@ -63,4 +82,36 @@ defaultproperties
       FortCompleted(19)=""
       MatchScore=""
       bMatchModeEnabled=False
+      ePRIArray(0)=None
+      ePRIArray(1)=None
+      ePRIArray(2)=None
+      ePRIArray(3)=None
+      ePRIArray(4)=None
+      ePRIArray(5)=None
+      ePRIArray(6)=None
+      ePRIArray(7)=None
+      ePRIArray(8)=None
+      ePRIArray(9)=None
+      ePRIArray(10)=None
+      ePRIArray(11)=None
+      ePRIArray(12)=None
+      ePRIArray(13)=None
+      ePRIArray(14)=None
+      ePRIArray(15)=None
+      ePRIArray(16)=None
+      ePRIArray(17)=None
+      ePRIArray(18)=None
+      ePRIArray(19)=None
+      ePRIArray(20)=None
+      ePRIArray(21)=None
+      ePRIArray(22)=None
+      ePRIArray(23)=None
+      ePRIArray(24)=None
+      ePRIArray(25)=None
+      ePRIArray(26)=None
+      ePRIArray(27)=None
+      ePRIArray(28)=None
+      ePRIArray(29)=None
+      ePRIArray(30)=None
+      ePRIArray(31)=None
 }
