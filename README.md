@@ -18,6 +18,41 @@ Born out of an extension to the popular Unreal Tournament mutator "Eavy Assault 
 
 ## Release notes
 
+### Version 120-123 beta
+Released circa June 2001.
+
+Bug fixes, preparing for v124 release.
+
+-------------
+### Version 119
+Released circa June 2001.
+
+#### Game Play / Player Related New Features
+
+**Improved HUD**
+
+The HUD has been improved to show:
+
+- Packet loss and ping.
+
+- Team Sizes (or match score during a match).
+
+- A complete team listing with location, weapon, health, armour and weapon of each team mate.
+
+- A complete objective listing including the status of each (completed / uncompleted) and if completed by whom.
+
+Extended HUD may be toggled on/off with **ToggleExtendedHUD** and individual features may be toggled with **ToggleExtendedHUDItems** command or through editing the LeagueASXXX.LeagueAS_HUD section of your user.ini. HUD font size may be toggled with **ToggleExtendedHUDFont** command and through .ini editing.
+
+#### Admin commands
+
+The following additional commands may be executed by a server admin only and must be preceeded by the admin command:
+
+**ShowMatchLog**: Returns a list of logged match results.
+
+**ClearMatchLog**: Clears the match log.
+
+
+-------------
 ### Version 118
 Released circa June 2001.
 
@@ -132,8 +167,9 @@ The following game parameters can be found under the [LeagueAS.LeagueAssault] se
 
  
 #####  Admin Commands
-The following commands may be executed by a server admin only and must be proceeded by the admin command (e.g admin StartMatch):
-StartMatch: Requires that Tournament Mode be active. Resets the scores and initiates a new match. The first map will start after a period of time designated by FirstMapStartTime and each subsequent map after a period of time designated by SubsequentMapStartTime. The match will end after MatchLength maps at which point the server will pause not restarting the map and will disable match mode. The admin should then simply change/restart the map to return it to normal play.
+The following commands may be executed by a server admin only and must be preceeded by the admin command (e.g admin StartMatch):
+
+**StartMatch**: Requires that Tournament Mode be active. Resets the scores and initiates a new match. The first map will start after a period of time designated by FirstMapStartTime and each subsequent map after a period of time designated by SubsequentMapStartTime. The match will end after MatchLength maps at which point the server will pause not restarting the map and will disable match mode. The admin should then simply change/restart the map to return it to normal play.
 
 **EndMatch**: Instructs the server to terminate the match after the current map is complete.
 
@@ -163,7 +199,7 @@ Players may login/logout as moderator (with the correct password designated by t
  - Removed all Flak ammo
 
 -------------
-### Version 116 beta
+### Versions 112-117 beta
 Released circa May 2001.
 
 #### Map Changes

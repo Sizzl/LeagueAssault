@@ -1,41 +1,4 @@
-//=============================================================================
-// Phear (phear@utassault.net)
-//=============================================================================
-class LeagueAS_GameReplicationInfo extends TournamentGameReplicationInfo;
 
-var int StartTimeRemaining;
-var string FortName[20];
-var string FortCompleted[20];
-var string MatchScore;
-var bool bMatchModeEnabled;
-
-var LeagueAS_ExtPlayerReplicationInfo ePRIArray[32];
-
-//************************************************************************************************
-replication {
-
-    reliable if ( Role==ROLE_Authority )
-		StartTimeRemaining, FortName, FortCompleted, MatchScore, bMatchModeEnabled, ePRIArray;
-
-}
-//************************************************************************************************
-simulated function Timer()
-{
-	local LeagueAS_ExtPlayerReplicationInfo ePRI;
-	local int i;
-
-	Super.Timer();
-		
-	for (i=0; i<32; i++)
-		ePRIArray[i] = None;
-	
-	i=0;
-	foreach AllActors(class'LeagueAS_ExtPlayerReplicationInfo', ePRI)
-		if ( i < 32 )
-			ePRIArray[i++] = ePRI;
-
-}
-//************************************************************************************************
 
 defaultproperties
 {
