@@ -7,8 +7,10 @@ A popular game-type modification for Unreal Tournament 1999, first established i
 * [Top](#leagueassault)
   * [History](#history)
   * [Release notes](#release-notes)
-    * [Versions 111](#version-111)
-    * [Versions 104](#version-104)
+    * [Version 118](#version-118)
+    * [Version 116 beta](#version-116-beta)
+    * [Version 111](#version-111)
+    * [Version 104](#version-104)
     * [Versions 100-103](#versions-100-103)
 
 ## History
@@ -162,7 +164,7 @@ Players may login/logout as moderator (with the correct password designated by t
 
 -------------
 ### Version 116 beta
-Released circa 
+Released circa May 2001.
 
 #### Map Changes
 **Asthenosphere**
