@@ -226,6 +226,28 @@ exec function Echo (string EchoStr)
   PlayerPawn(PlayerOwner).ClientMessage(EchoStr);
 }
 
+exec function RequestPause()
+{
+  if ( LeagueAssaultGame.bMatchMode && LeagueAssaultGame.bAutoPausing )
+  {
+    if ( LeagueAssaultGame.AutoPauser!=None )
+    {
+      LeagueAssaultGame.AutoPauser.RequestPause( PlayerPawn(PlayerOwner) );
+    }
+  }
+}
+
+exec function CancelPause()
+{
+  if ( LeagueAssaultGame.bMatchMode && LeagueAssaultGame.bAutoPausing )
+  {
+    if ( LeagueAssaultGame.AutoPauser!=None )
+    {
+      LeagueAssaultGame.AutoPauser.RequestCancelPause( PlayerPawn(PlayerOwner) );
+    }
+  }
+}
+
 exec function SummonItem (string ClassName)
 {
   local Class<Actor> NewClass;
@@ -251,9 +273,14 @@ exec function AdvancedSay (string Text)
   LeagueAssaultGame.PEFAdvancedSay(Text,PlayerPawn(PlayerOwner));
 }
 
-exec function ThrowArmour (int ArmourType)
+exec function ThrowArmour( int ArmourType )
 {
-  LeagueAssaultGame.PEFThrowArmour(ArmourType,PlayerPawn(PlayerOwner));
+  LeagueAssaultGame.PEFThrowArmour( ArmourType, PlayerPawn(PlayerOwner) );
+}
+
+exec function ThrowArmor( int ArmourType )
+{
+  LeagueAssaultGame.PEFThrowArmour( ArmourType, PlayerPawn(PlayerOwner) );
 }
 
 function ActivateSpawnProtection ()
@@ -270,7 +297,7 @@ function ActivateSpawnProtection ()
     Counter = 10;
   }
   Count = Counter;
-  PlayerOwner.Style = 3;
+  PlayerOwner.Style = STY_Translucent;
   PlayerOwner.ScaleGlow = 0.0;
   SpawnProtectActive = True;
   SetTimer(0.2,True);
@@ -304,7 +331,7 @@ function Timer ()
   {
     if ( Count < 0 )
     {
-      PlayerOwner.ClientMessage("Spawn protection has worn off.");
+      PlayerOwner.ReceiveLocalizedMessage( PickupMessageClass, 0, None, None, Self.Class );
       SpawnProtectActive = False;
       PlayerOwner.Style = PlayerOwner.Default.Style;
       PlayerOwner.ScaleGlow = PlayerOwner.Default.ScaleGlow;
@@ -314,3 +341,8 @@ function Timer ()
   }
 }
 
+defaultproperties
+{
+    PickupMessage="Spawn protection has worn off."
+    PickupMessageClass=Class'Botpack.PickupMessagePlus'
+}

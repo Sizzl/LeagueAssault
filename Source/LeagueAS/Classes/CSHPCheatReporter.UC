@@ -92,6 +92,9 @@ function string xxDecodeMessageID (int zzMessageId)
     case 20:
     return "Client Illegally Restarted";
     break;
+    case 21:
+    return "Rogue Actor Detected";
+    break;
     default:
     return "Unknown Message sent to Server (" $ string(zzMessageId) $ ")";
     break;
@@ -146,6 +149,9 @@ function string xxDecodeCheatID (int zzCheatID)
     break;
     case 14:
     return "(ElfBot)";
+    break;
+    case 15:
+    return "(Nobots Bot)";
     break;
     default:
     return "(Unknown Cheat)";

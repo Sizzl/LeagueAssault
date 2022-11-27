@@ -25,26 +25,27 @@ simulated function Timer()
   local PlayerReplicationInfo PRI;
   local int i, FragAcc, Difference;
 
-  if ( int(Level.NetMode)==int(ENetMode.NM_Client) )
+  if ( TimeRemaining==0 && bStopCountDown )
   {
-    Difference = TimeElapsed-ElapsedTime;
-    if ( Difference<0 )
-    {
-      ElapsedTime += Difference/2-1;
-    }
-    else if ( Difference>0 )
-    {
-      ElapsedTime += Difference/2+1;
-    }
-    Difference = TimeRemaining-RemainingTime;
-    if ( Difference<0 )
-    {
-      RemainingTime += Difference/2-1;
-    }
-    else if ( Difference>0 )
-    {
-      RemainingTime += Difference/2+1;
-    }
+    RemainingTime = 0;
+  }
+  Difference = TimeRemaining-RemainingTime;
+  if ( Difference<0 )
+  {
+    RemainingTime += Difference/2-1;
+  }
+  else if ( Difference>0 )
+  {
+    RemainingTime += Difference/2+1;
+  }
+  Difference = TimeElapsed-ElapsedTime;
+  if ( Difference<0 )
+  {
+    ElapsedTime += Difference/2-1;
+  }
+  else if ( Difference>0 )
+  {
+    ElapsedTime += Difference/2+1;
   }
   for ( i=0; i<32; i++ )
   {

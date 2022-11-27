@@ -12,7 +12,8 @@ var int zzKeyNdx;
 var() config int SecurityLevel;
 var() config float SecurityFrequency;
 var() config float SecurityTolerance;
-var() config int TrackFOV;
+var() config bool bScanForRogues;
+var() config bool bTrackFOV;
 var() config bool bTrackCV;
 var() config int Advertise;
 var() config bool bOnlyAdminKick;
@@ -27,7 +28,7 @@ var bool zzbInitialized;
 var PlayerPawn zzPlayerList[32];
 var CSHPCheatRI zzPlayerRIList[32];
 var int zzPlayerNetSpeed[32];
-var Vector zzPlayerVList[32];
+var vector zzPlayerVList[32];
 var int zzPlayerHeld[32];
 var string zzCheatTestIP;
 var string zzMyPacks;
@@ -37,6 +38,7 @@ var float zzTeamChangeTime;
 var int zzGameState;
 var string VersionStr;
 var CSHPLog zzCheatLog;
+
 
 function xxPreDecrypt()
 {
@@ -92,7 +94,8 @@ function PostBeginPlay()
   xxCLog( "Security Level is ............. "$string(SecurityLevel) );
   xxCLog( "Security Frequency is ......... "$string(SecurityFrequency) );
   xxCLog( "Security Tolerance is ......... "$string(SecurityTolerance) );
-  xxCLog( "Tracking FOV .................. "$string(TrackFOV) );
+  xxCLog( "Scanning for Rogue Actors ..... "$string(bScanForRogues) );
+  xxCLog( "Tracking FOV .................. "$string(bTrackFOV) );
   xxCLog( "Tracking CV ................... "$string(bTrackCV) );
   xxCLog( "Only Admin Kick ............... "$string(bOnlyAdminKick) );
   xxCLog( "Use Numeric IP ................ "$string(bUseNumericIP) );
@@ -104,7 +107,7 @@ function PostBeginPlay()
   xxCLog( "Admin Warning Enabled ......... "$string(bAdminWarn) );
   xxCLog( "" );
   xxCLog( "__________________________________________" );
-  if ( Advertise>0 && int(Level.NetMode)!=int(ENetMode.NM_Standalone) && InStr(Level.Game.GameReplicationInfo.ServerName,"[CSHP]")==-1 )
+  if ( Advertise>0 && Level.NetMode!=NM_Standalone && InStr(Level.Game.GameReplicationInfo.ServerName,"[CSHP]")==-1 )
   {
     if ( Advertise==1 )
     {
@@ -237,17 +240,17 @@ function Tick( float DeltaTime )
         zzPlayerNetSpeed[zzi] = 0;
         zzRI.zzMyMutie = Self;
         zzRI.zzSecurityLevel = SecurityLevel;
-        if ( TrackFOV>0 && Level.Game.bAllowFOV )
-        {
-          zzRI.zzWatchFOV = 0;
-        }
+        zzRI.zzbCheckForRogues = bScanForRogues;
+        zzRI.zzWatchFOV = bTrackFOV;
         zzRI.zzWatchCV = bTrackCV;
         zzRI.zzbNGStatsOnly = bNGStatsOnly;
         zzRI.zzCheat = zzMyCheat;
         zzRI.zzbAllowNoSmoke = bAllowNoSmoke;
         zzRI.LeagueASVersionStr = LeagueAssault(Level.Game).VersionStr $ LeagueAssault(Level.Game).SubVersionStr;
+        zzRI.zzServerPacks = zzMyPacks;
         zzMyCheat.xxClientLoggedIn( zzP, zzRI );
         zzRI.zzTimeOutGrace = Level.TimeSeconds+SecurityFrequency*Level.TimeDilation*float(3);
+      }
       }
     }
   }
@@ -306,7 +309,8 @@ function Mutate( string MutateString, PlayerPawn Sender )
   {
     Sender.ClientMessage( "This server is running "$VersionStr );
     Sender.ClientMessage( "Security Level is: "$string(SecurityLevel) );
-    Sender.ClientMessage( "Tracking FOV: "$string(TrackFOV) );
+    Sender.ClientMessage( "Scanning for Rogues: "$string(bScanForRogues) );
+    Sender.ClientMessage( "Tracking FOV: "$string(bTrackFOV) );
     Sender.ClientMessage( "Tracking CV: "$string(bTrackCV) );
     Sender.ClientMessage( "Only Admin Kick: "$string(bOnlyAdminKick) );
     Sender.ClientMessage( "NGStats Only: "$string(bNGStatsOnly) );
@@ -722,11 +726,12 @@ defaultproperties
     SecurityLevel=1
     SecurityFrequency=2.00
     SecurityTolerance=60.00
-    TrackFOV=1
+    bScanForRogues=True
+    bTrackFOV=1
     bTrackCV=True
     bOnlyAdminKick=True
     bFastTeams=True
     MaxInitTries=15
     bAdminWarn=1
-    VersionStr="CSHP4 v1.7.29"
+    VersionStr="Enhanced CSHP"
 }

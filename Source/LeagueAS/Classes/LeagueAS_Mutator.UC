@@ -39,42 +39,62 @@ function bool MutatorTeamMessage( Actor Sender, Pawn Receiver, PlayerReplication
 
   if ( Sender!=None && Receiver!=None )
   {
-    if ( Sender.IsA('PlayerPawn') && !Sender.IsA('Spectator') && Receiver.IsA('PlayerPawn') && !Receiver.IsA('Spectator') )
+    if ( Sender.IsA('PlayerPawn') && Receiver.IsA('PlayerPawn') )
     {
-      foreach AllActors( Class'ClientOptions', CO )
+      S = LeagueAssaultGame.ProcessAdvancedSay( S, PlayerPawn(Sender) );
+      if ( !Sender.IsA('Spectator') && !Receiver.IsA('Spectator') )
       {
-        if ( Receiver==CO.Owner )
+        foreach AllActors( Class'ClientOptions', CO )
         {
-          break;
+          if ( Receiver==CO.Owner )
+          {
+            break;
+          }
         }
-      }
-      if ( int(PlayerPawn(Sender).PlayerReplicationInfo.Team)!=int(PlayerPawn(Receiver).PlayerReplicationInfo.Team) )
-      {
-        if ( CO.bMuteSay )
+        if ( int(PlayerPawn(Sender).PlayerReplicationInfo.Team)!=int(PlayerPawn(Receiver).PlayerReplicationInfo.Team) )
         {
-          return false;
+          if ( !CO.bMuteSay )
+          {
+            if ( NextMessageMutator!=None )
+            {
+              if ( NextMessageMutator.MutatorTeamMessage(Sender,Receiver,PRI,S,Type,bBeep) )
+              {
+                Receiver.TeamMessage( PRI, S, Type, bBeep );
+              }
+            }
+            else
+            {
+              Receiver.TeamMessage( PRI, S, Type, bBeep );
+            }
+          }
         }
-        else if ( NextMessageMutator!=None )
+        else if ( !CO.bMuteAll )
         {
-          return NextMessageMutator.MutatorTeamMessage( Sender, Receiver, PRI, S, Type, bBeep );
+          if ( NextMessageMutator!=None )
+          {
+            if ( NextMessageMutator.MutatorTeamMessage(Sender,Receiver,PRI,S,Type,bBeep) )
+            {
+              Receiver.TeamMessage( PRI, S, Type, bBeep );
+            }
+          }
+          else
+          {
+            Receiver.TeamMessage( PRI, S, Type, bBeep );
+          }
         }
-        else
-        {
-          return true;
-        }
-      }
-      else if ( CO.bMuteAll )
-      {
-        return false;
       }
       else if ( NextMessageMutator!=None )
       {
-        return NextMessageMutator.MutatorTeamMessage( Sender, Receiver, PRI, S, Type, bBeep );
+        if ( NextMessageMutator.MutatorTeamMessage(Sender,Receiver,PRI,S,Type,bBeep) )
+        {
+          Receiver.TeamMessage( PRI, S, Type, bBeep );
+        }
       }
       else
       {
-        return true;
+        Receiver.TeamMessage( PRI, S, Type, bBeep );
       }
+      return false;
     }
     else if ( NextMessageMutator!=None )
     {
@@ -86,3 +106,4 @@ function bool MutatorTeamMessage( Actor Sender, Pawn Receiver, PlayerReplication
     }
   }
 }
+

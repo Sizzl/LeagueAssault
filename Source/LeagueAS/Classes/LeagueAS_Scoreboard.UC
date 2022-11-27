@@ -4,15 +4,14 @@
 
 class LeagueAS_Scoreboard extends AssaultScoreboard;
 
-function string PadOut (string InText)
+function string PadOut( string InText )
 {
   local string Text;
 
   Text = InText;
-  if ( Len(Text) < 4 )
+  while ( Len(Text)<4 )
   {
     Text = " " $ Text;
-    goto JL000B;
   }
   return Text;
 }

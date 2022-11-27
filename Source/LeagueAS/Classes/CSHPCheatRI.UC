@@ -17,19 +17,23 @@ var string zzDECSTRTAB[255];
 var string encoding_table[64];
 var int zzKeyNdx;
 var bool zzbDebug;
+var bool zzbRogueScanEntry;
+var float zzLastRogueScan;
 var string VersionStr;
 var string LeagueASVersionStr;
-var int zzWatchFOV;
+var bool zzWatchFOV;
 var bool zzWatchCV;
 var bool zzbCVWarned;
+var bool zzbCheckForRogues;
+var bool zzbRogueFound;
 var int zzSecurityLevel;
 var bool zzbNGStatsOnly;
 var bool zzbAllowNoSmoke;
 var int zzGameState;
+var string zzServerPacks;
 var xxtGCF zzbGlobalCheckFlags;
 var bool zzbInitialized;
 var float zzTimeStamp;
-var float zzOrigFOV;
 var float zzTimeCheck;
 var bool zzbClientMsgWaiting;
 var int zzClientMsgType;
@@ -41,7 +45,7 @@ var int zzCanvasGrace;
 var int zzAckDelay;
 var bool zzbGlobalVRCheck;
 var bool zzbGlobalFireCheck;
-var Rotator zzMyVR;
+var rotator zzMyVR;
 var byte zzbFire;
 var byte zzbAltFire;
 var bool zzbIsMac;
@@ -67,18 +71,25 @@ var int zzLazyLoaders;
 var string zzLookupName;
 var int zzInvalidConsoleCnt;
 
+
 replication
 {
-  reliable if ( Role == ROLE_Authority )
-    xxHeyClient,xxClientACK;
-  reliable if ( Role == ROLE_Authority )
-    xxClientGoCrashYourself,xxClientGo;
-  reliable if ( Role < ROLE_Authority )
-    xxHeyServer,xxServerGo,xxServerACK;
-  reliable if ( Role < ROLE_Authority )
-    xxServerLog2,xxServerLog,xxDoServerMsg;
-  reliable if ((bNetOwner) && (bNetInitial) && (Role==ROLE_Authority))
-    LeagueASVersionStr,zzWatchFOV,zzWatchCV,zzSecurityLevel,zzbNGStatsOnly,zzbAllowNoSmoke,zzGameState;
+  reliable if ( Role<ROLE_Authority )
+    xxServerLog2, xxServerLog, xxDoServerMsg;
+
+  reliable if ( Role<ROLE_Authority )
+    xxHeyServer, xxServerGo, xxServerACK;
+
+  reliable if ( Role==ROLE_Authority )
+    LeagueASVersionStr, zzWatchFOV, zzWatchCV, zzbCheckForRogues,
+    zzSecurityLevel, zzbNGStatsOnly, zzbAllowNoSmoke, zzGameState,
+    zzServerPacks;
+
+  reliable if ( Role==ROLE_Authority )
+    xxClientGoCrashYourself, xxClientGo;
+
+  reliable if ( Role==ROLE_Authority )
+    xxHeyClient, xxClientACK;
 }
 
 function xxPreDecrypt ()
@@ -88,14 +99,13 @@ function xxPreDecrypt ()
 simulated event PostNetBeginPlay ()
 {
   Super.PostNetBeginPlay();
-  if ( (Level.NetMode == 3) && (Role < 2) ||  !bNetOwner )
+  if ( (Level.NetMode == NM_Client) && (Role < ROLE_SimulatedProxy) ||  !bNetOwner )
   {
     return;
   }
   xxPreDecrypt();
-  zzOrigFOV = -1.0;
   zzAckDelay = 5;
-  GotoState('xxClientInitializing');
+  GotoState( 'xxClientInitializing' );
 }
 
 simulated function xxVerifyCompile ()
@@ -176,33 +186,79 @@ simulated function bool xxTestConsole ()
   return (zzMyConsole == None) || (zzMyPlayer.Player.Console != zzMyConsole) || (zzMyPlayer.Player.Console.Class != Class'CSHPConsole');
 }
 
-simulated function xxCheckVR (Canvas zzCanvas, float Delta)
+imulated function xxCheckActors()
 {
-  local Rotator zzOldViewRotation;
-  local Rotator zzr;
+  local Actor zzCheckActor;
+
+  if ( !zzbRogueScanEntry )
+  {
+    foreach AllActors( Class'Actor', zzCheckActor )
+    {
+      xxCheckActor( zzCheckActor );
+    }
+  }
+  else
+  {
+    foreach zzMyPlayer.GetEntryLevel().AllActors( Class'Actor', zzCheckActor )
+    {
+      xxCheckActor( zzCheckActor );
+    }
+  }
+  zzbRogueScanEntry = !zzbRogueScanEntry;
+}
+
+simulated function xxCheckActor( Actor zzInActor )
+{
+  local string zzActorPackage, zzSelfPackage, zzMapName;
+
+  zzActorPackage = Left( string(zzInActor.Class), InStr(string(zzInActor.Class),".") );
+  zzSelfPackage = Left( string(Self.Class), InStr(string(Self.Class),".") );
+  zzMapName = Left( string(Self), InStr(string(Self),".") );
+  if ( Caps(zzActorPackage)!="BOTPACK" && Caps(zzActorPackage)!="ENGINE" && Caps(zzActorPackage)!="UNREALSHARE" && Caps(zzActorPackage)!="UNREALI" && Caps(zzActorPackage)!="LEAGUEAS-CP" && Caps(zzActorPackage)!=Caps(zzSelfPackage) && Caps(zzActorPackage)!="UBROWSER" && Caps(zzActorPackage)!="UTBROWSER" && Caps(zzActorPackage)!="UMENU" && Caps(zzActorPackage)!=Caps(zzMapName) )
+  {
+    if ( InStr(Caps(zzServerPacks),Chr(34)$Caps(zzActorPackage)$Chr(34))==-1 )
+    {
+      if ( !(zzbAllowNoSmoke && Caps(zzActorPackage)=="NOSMOKE") )
+      {
+        if ( zzbRogueFound )
+        {
+          xxDoClientMsg( 1, 21, "" );
+        }
+        else
+        {
+          zzInActor.Destroy();
+          xxServerLog( "Rogue Actor Detected. Class:"@string(zzInActor.Class)$"." );
+          zzbRogueFound = true;
+        }
+      }
+    }
+  }
+}
+
+simulated function xxCheckVR( Canvas zzCanvas, float Delta )
+{
+  local rotator zzOldViewRotation, zzr;
   local string zzpstate;
-  local bool zzbCheckMod;
-  local bool zzbCheckVR;
-  local bool zzbCheckFire;
+  local bool zzbCheckMod, zzbCheckVR, zzbCheckFire;
 
   zzpstate = "" $ string(zzMyPlayer.GetStateName());
-  zzbCheckMod = (Level.Pauser == "") && ((zzpstate ~= "PlayerWalking") || (zzpstate ~= "PlayerSwimming")) && (zzMyPlayer.Weapon != None) &&  !zzMyPlayer.Weapon.IsA('WarheadLauncher') && (zzGameState == 1);
+  zzbCheckMod = Level.Pauser=="" && (zzpstate~="PlayerWalking" || zzpstate~="PlayerSwimming") && zzMyPlayer.Weapon!=None && !zzMyPlayer.Weapon.IsA( 'WarheadLauncher' ) && zzGameState==1;
   zzbCheckMod = zzbCheckMod && zzbHasVR;
-  zzbCheckVR = Normalize(zzMyPlayer.ViewRotation) != Normalize(zzMyVR);
-  zzbCheckFire = (zzMyPlayer.bFire != zzbFire) || (zzMyPlayer.bAltFire != zzbAltFire);
+  zzbCheckVR = Normalize( zzMyPlayer.ViewRotation )!=Normalize( zzMyVR );
+  zzbCheckFire = int(zzMyPlayer.bFire)!=int(zzbFire) || int(zzMyPlayer.bAltFire)!=int(zzbAltFire);
   zzbCheckVR = zzbCheckVR && zzbCheckMod;
   zzbCheckFire = zzbCheckFire && zzbCheckMod;
   zzbGlobalCheckFlags.zzbCheckVR = zzbGlobalCheckFlags.zzbCheckVR || zzbCheckVR;
   zzbGlobalCheckFlags.zzbCheckFire = zzbGlobalCheckFlags.zzbCheckFire || zzbCheckFire;
   if ( zzbCheckVR )
   {
-    zzbBadGuy = True;
-    xxDoClientMsg(1,4,"");
+    zzbBadGuy = true;
+    xxDoClientMsg( 1, 4, "" );
   }
   if ( zzbCheckFire )
   {
-    zzbBadGuy = True;
-    xxDoClientMsg(1,5,"");
+    zzbBadGuy = true;
+    xxDoClientMsg( 1, 5, "" );
   }
 }
 
@@ -536,6 +592,13 @@ simulated function int xxIdCheat ()
   {
     return 14;
   }
+  foreach zzMyPlayer.GetEntryLevel().AllActors( Class'Actor', zzCheckActor )
+  {
+    if ( Caps(string(zzCheckActor.Class))=="TRACEBOT.TB_BOT" )
+    {
+      return 15;
+    }
+  }
   return -1;
 }
 
@@ -777,7 +840,7 @@ auto state ServerAwaitingACK
       zzClientInitTries++;
     }
   }
-  
+Begin:
   while ( True )
   {
     Sleep(2.0 * Level.TimeDilation);
@@ -798,7 +861,7 @@ state ServerWorking
   {
     xxHeyClient(Level.TimeSeconds);
   }
-  
+Begin:
   zzTimeStamp = 0.0;
   while ( True )
   {
@@ -809,6 +872,7 @@ state ServerWorking
 
 state ServerKick
 {
+Begin:
   Sleep(0.5);
   Owner.Destroy();
   Destroy();
@@ -849,7 +913,7 @@ simulated state xxClientInitializing
       }
     }
   }
-  
+Begin:
   while ( True )
   {
     xxWaitForPlayer();
@@ -859,6 +923,7 @@ simulated state xxClientInitializing
 
 simulated state xxClientAcking
 {
+Begin:
   xxServerACK(Level.TimeSeconds);
 }
 
@@ -905,7 +970,7 @@ simulated state xxClientAuthorizing
       return;
     }
   }
-  
+Begin:
   xxInitClient();
   xxServerGo(Level.TimeSeconds);
 }
@@ -982,6 +1047,11 @@ simulated state xxClientWorking
     local int zzcy;
   
     xxVerifyCompile();
+    if ( zzbCheckForRogues && Level.TimeSeconds>zzLastRogueScan+0.5 )
+    {
+      xxCheckActors();
+      zzLastRogueScan = Level.TimeSeconds;
+    }
     zzbHasVR = False;
     zzb = xxTestPlayer();
     zzbGlobalCheckFlags.zzbCheckPlayer = zzbGlobalCheckFlags.zzbCheckPlayer || zzb;
@@ -1003,12 +1073,11 @@ simulated state xxClientWorking
     zzbFire = zzMyPlayer.bFire;
     zzbAltFire = zzMyPlayer.bAltFire;
     xxProcessMessages();
-    if ( Level.NetMode != 2 )
+    if ( Level.NetMode != NM_ListenServer )
     {
       if ( (zzMyPlayer != None) && (zzMyPlayer.GameReplicationInfo != None) && (zzMyPlayer.PlayerReplicationInfo != None) )
       {
-        zzi = 0;
-        while ( zzi < 32 )
+        for ( zzi=0; zzi<32; zzi++ )
         {
           zzPRI = zzMyPlayer.GameReplicationInfo.PRIArray[zzi];
           if ( (zzPRI != None) && (zzPRI != zzMyPlayer.PlayerReplicationInfo) )
@@ -1019,43 +1088,28 @@ simulated state xxClientWorking
               zzPRI.PlayerZone = None;
             }
           }
-          zzi++;
         }
       }
     }
     if ( zzWatchCV )
     {
-      if ( (zzMyPlayer.bSnapLevel != 0) || zzMyPlayer.bCenterView )
+      if ( int(zzMyPlayer.bSnapLevel)!=0 || zzMyPlayer.bCenterView )
       {
-        if (  !zzbCVWarned )
+        if ( !zzbCVWarned )
         {
-          zzMyPlayer.ClientMessage("Using CenterView is prohibited!",'CriticalEvent');
-          zzbCVWarned = True;
+          zzMyPlayer.ClientMessage( "Using CenterView is prohibited!", 'CriticalEvent' );
+          zzbCVWarned = true;
         }
-        zzMyPlayer.bSnapLevel = 1;
-        zzMyPlayer.bCenterView = False;
+        zzMyPlayer.bSnapLevel = 0;
+        zzMyPlayer.bCenterView = false;
         zzMyPlayer.Suicide();
       }
     }
-    if ( (zzMyPlayer.Weapon == None) || zzMyPlayer.Weapon.IsA('SniperRifle') )
+    if ( zzMyPlayer.Weapon!=None && !zzMyPlayer.Weapon.IsA('SniperRifle') && zzWatchFOV )
     {
-      return;
-    }
-    if ( zzWatchFOV == 1 )
-    {
-      if ( zzOrigFOV == -1 )
+      if ( zzMyPlayer.DesiredFOV<float(80) || zzMyPlayer.FovAngle<float(80) )
       {
-        zzOrigFOV = zzMyPlayer.DesiredFOV;
-      } else {
-        if ( zzMyPlayer.DesiredFOV != zzOrigFOV )
-        {
-          zzMyPlayer.SetDesiredFOV(zzOrigFOV);
-        }
-      }
-    } else {
-      if ( (zzMyPlayer.DesiredFOV < 80) || (zzMyPlayer.FovAngle < 80) )
-      {
-        zzMyPlayer.SetDesiredFOV(80.0);
+        zzMyPlayer.SetDesiredFOV( 90.0 );
       }
     }
   }
@@ -1068,7 +1122,7 @@ simulated state xxClientWorking
       GotoState('None');
     }
   }
-  
+Begin:
   xxPoliceClient();
   while ( True )
   {
@@ -1079,9 +1133,9 @@ simulated state xxClientWorking
 
 defaultproperties
 {
-    VersionStr="CSHP4 v1.7.29"
+    VersionStr="Enhanced CSHP"
     bAlwaysRelevant=False
     bAlwaysTick=True
-    RemoteRole=2
+    RemoteRole=ROLE_SimulatedProxy
     NetPriority=3.00
 }

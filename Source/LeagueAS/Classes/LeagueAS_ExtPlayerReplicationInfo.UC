@@ -24,6 +24,6 @@ replication
 
 defaultproperties
 {
-    RemoteRole=2
+    RemoteRole=ROLE_SimulatedProxy
     NetPriority=10.00
 }

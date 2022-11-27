@@ -7,6 +7,7 @@ A popular game-type modification for Unreal Tournament 1999, first established i
 * [Top](#leagueassault)
   * [History](#history)
   * [Release notes](#release-notes)
+    * [Versions 131-132](#versions-131-132)
     * [Version 130](#version-130)
     * [Versions 125-129 beta](#versions-125-129-beta)
     * [Version 124](#version-124)
@@ -23,19 +24,40 @@ Born out of an extension to the popular Unreal Tournament mutator "Eavy Assault 
 
 ## Release notes
 
+### Versions 131-132
+
+Released March 2002.
+
+- Introduced AntiHammerLaunch, AntiRocketLaunch and iAS mutators (131)
+- Auto Pausing
+- PublicString & PrivateString Variables: Allows server admin to customise the string that is displayed by bAdminNameScore and bServerNameScore options
+- Fixed Elapsed Time not working in offline/practice mode
+- Fixed Anti Rocket Launch & Anti Hammer Launch mutators preventing spawn protection from working
+- Allow "ThrowArmor" (US English) as well as "ThrowArmour" (British English) for command
+- Automatically logout those connecting with admin password when server is in match mode
+- Stop "toggle bSnaplevel" causing constant suiciding
+- Fixed FOV changing
+- AdvancedSay & AdvancedTeamSay scrapped, parameters will now work in standard Say and TeamSay commands
+- Fixed FortStandards blocking tracehit weapons
+- Enhanced CSHP with a new type of cheat protection, stops those cheats known to get past v130 and closes a large loophole in the cheat protection
+
+#### Auto Pausing 
+New system wont pause if the teams are even (even if the server isn't full) and it wont pause if the teams aren't even at the start of the map (only if a player drops mid game).
+
+Maximum pause time is now for the whole match and not based on per map, default is 3 minutes
+
+- RequestPause function allows clans to pause at ANY time not just when a player drops
+- CancelPause function allows clans to cancel the pause during the pause count down or resume while the game is paused at any time
+
 
 ### Version 130
 Released circa December 2001.
-
-This was the final release from Phear.
-
 
 #### Client Side Hack Protection
 
 Further anti-cheat / anti-hack / bug-fix measures added:
 
 - Multi-Weapon bug/cheat fix.
-
 
 -------------
 ### Versions 125-129 beta

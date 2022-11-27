@@ -10,21 +10,21 @@ var LeagueAS_GameReplicationInfo LeagueASGameReplicationInfo;
 
 function float DistanceFrom (Pawn P1, Pawn P2)
 {
-  local float DistanceX;
-  local float DistanceY;
-  local float ADistance;
+  local float DistanceX, DistanceY, ADistance;
 
-  if ( (P1 == None) || (P2 == None) )
+  if ( P1==None || P2==None )
   {
-    return -469762048.0;
+    return -4.69762e+08;
   }
-  if ( (P1.Location.X == 0) && (P1.Location.Y == 0) || (P2.Location.X == 0) && (P2.Location.Y == 0) )
+  if ( P1.Location.X==float(0) && P1.Location.Y==float(0) || P2.Location.X==float(0) && P2.Location.Y==float(0) )
   {
     return -1.0;
-  } else {
-    DistanceX = P1.Location.X - P2.Location.X;
-    DistanceY = P1.Location.Y - P2.Location.Y;
-    ADistance = Sqrt(Square(DistanceX) + Square(DistanceY));
+  }
+  else
+  {
+    DistanceX = P1.Location.X-P2.Location.X;
+    DistanceY = P1.Location.Y-P2.Location.Y;
+    ADistance = Sqrt( Square(DistanceX)+Square(DistanceY) );
     return ADistance;
   }
 }

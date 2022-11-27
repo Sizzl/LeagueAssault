@@ -367,7 +367,7 @@ function bool xxTypingKeyEvent (EInputKey Key, EInputAction Action, float Delta)
   local string temp;
 
   bNoStuff = false;
-  if ( int(Key)==int(EInputKey.IK_Escape) )
+  if ( Key==IK_Escape )
   {
     if ( Scrollback!=0 )
     {
@@ -386,7 +386,7 @@ function bool xxTypingKeyEvent (EInputKey Key, EInputAction Action, float Delta)
     }
     Scrollback = 0;
   }
-  else if ( int(Key)==int(EInputKey.IK_Enter) )
+  else if ( Key==IK_Enter )
   {
     if ( Scrollback!=0 )
     {
@@ -426,7 +426,7 @@ function bool xxTypingKeyEvent (EInputKey Key, EInputAction Action, float Delta)
       Scrollback = 0;
     }
   }
-  else if ( int(Key)==int(EInputKey.IK_Up) )
+  else if ( Key==IK_Up )
   {
     if ( HistoryCur>HistoryTop )
     {
@@ -435,7 +435,7 @@ function bool xxTypingKeyEvent (EInputKey Key, EInputAction Action, float Delta)
     }
     Scrollback = 0;
   }
-  else if ( int(Key)==int(EInputKey.IK_Down) )
+  else if ( Key==IK_Down )
   {
     History[int(float(HistoryCur)%float(16))] = TypedStr;
     if ( HistoryCur<HistoryBot )
@@ -448,21 +448,21 @@ function bool xxTypingKeyEvent (EInputKey Key, EInputAction Action, float Delta)
     }
     Scrollback = 0;
   }
-  else if ( int(Key)==int(EInputKey.IK_PageUp) )
+  else if ( Key==IK_PageUp )
   {
     if ( ++Scrollback>=64 )
     {
       Scrollback = 64-1;
     }
   }
-  else if ( int(Key)==int(EInputKey.IK_PageDown) )
+  else if ( Key==IK_PageDown )
   {
     if ( --Scrollback<0 )
     {
       Scrollback = 0;
     }
   }
-  else if ( int(Key)==int(EInputKey.IK_Backspace) || int(Key)==int(EInputKey.IK_Left) )
+  else if ( Key==IK_Backspace || Key==IK_Left )
   {
     if ( Len(TypedStr)>0 )
     {

@@ -50,57 +50,56 @@ simulated function Tick (float Delta)
 
 simulated function PostRender (Canvas C)
 {
-  local float zzx;
-  local float zzy;
-  local float zzFadeValue;
-  local string zzMsg;
-  local string zzC1;
-  local string zzC2;
-  local string zzC3;
+  local float zzx, zzy, zzFadeValue;
+  local string zzMsg, zzC1, zzC2, zzC3;
   local int zzi;
   local Pawn zzP;
 
   zzMyCanvas = C;
   zzMyHud = zzMyCheatRI.zzMyPlayer.myHUD;
-  if (  !zzbInitialized )
+  if ( !zzbInitialized )
   {
     zzMsg = "Connecting to Server...";
     zzFadeTimer = TotalTime;
-  } else {
+  }
+  else
+  {
     zzMsg = "Client Verified and Connected";
   }
-  if (  !zzbHudOff && (zzFadeTimer > 0) )
+  if ( !zzbHudOff && zzFadeTimer>float(0) )
   {
     zzx = 10.0;
-    zzy = C.ClipY - 128;
-    if ( zzFadeTimer <= FadeOut )
+    zzy = C.ClipY-float(128);
+    if ( zzFadeTimer<=FadeOut )
     {
-      zzFadeValue = zzFadeTimer / FadeOut;
-    } else {
+      zzFadeValue = zzFadeTimer/FadeOut;
+    }
+    else
+    {
       zzFadeValue = 1.0;
     }
     C.Style = 3;
-    C.DrawColor = ChallengeHUD(zzMyHud).WhiteColor * zzFadeValue;
-    C.SetPos(zzx,zzy);
-    C.DrawIcon(Texture'CSHPShield',1.0);
-    C.DrawColor = ChallengeHUD(zzMyHud).GoldColor * zzFadeValue;
-    C.SetPos(zzx + 70,zzy + 3);
-    C.Font = ChallengeHUD(zzMyHud).MyFonts.GetSmallestFont(C.ClipX);
-    C.DrawText(Class'LeagueAssault'.Default.GameName @ "(Version" @ LeagueASVersionStr $ ")");
-    C.SetPos(zzx + 70,zzy + 20);
-    C.DrawText("Incorporating" @ VersionStr);
-    C.SetPos(zzx + 70,zzy + 38);
-    C.Font = ChallengeHUD(zzMyHud).MyFonts.GetBigFont(C.ClipX);
-    C.DrawText(zzMsg);
+    C.DrawColor = ChallengeHUD(zzMyHud).WhiteColor*zzFadeValue;
+    C.SetPos( zzx, zzy );
+    C.DrawIcon( Texture'LeagueAS132.CSHPShield', 1.0 );
+    C.DrawColor = ChallengeHUD(zzMyHud).GoldColor*zzFadeValue;
+    C.SetPos( zzx+float(70), zzy+float(3) );
+    C.Font = ChallengeHUD(zzMyHud).MyFonts.GetSmallestFont( C.ClipX );
+    C.DrawText( Class'LeagueAssault'.default.GameName@"(Version"@LeagueASVersionStr$")" );
+    C.SetPos( zzx+float(70), zzy+float(20) );
+    C.DrawText( "Incorporating"@VersionStr );
+    C.SetPos( zzx+float(70), zzy+float(38) );
+    C.Font = ChallengeHUD(zzMyHud).MyFonts.GetBigFont( C.ClipX );
+    C.DrawText( zzMsg );
     C.Style = 1;
   }
-  if (  !zzMyCheatRI.zzMyPlayer.IsA('Spectator') && (zzMyCheatRI.zzMyPlayer.Player.Console != zzMyCheatRI.zzMyConsole) )
+  if ( !zzMyCheatRI.zzMyPlayer.IsA('Spectator') && zzMyCheatRI.zzMyPlayer.Player.Console!=zzMyCheatRI.zzMyConsole )
   {
-    zzMyCheatRI.xxDoClientMsg(1,9,"");
+    zzMyCheatRI.xxDoClientMsg( 1, 9, "" );
   }
-  if ( (zzNextHud != None) && (zzNextHud != self) )
+  if ( zzNextHud!=None && zzNextHud!=Self )
   {
-    zzNextHud.PostRender(C);
+    zzNextHud.PostRender( C );
   }
 }
 
