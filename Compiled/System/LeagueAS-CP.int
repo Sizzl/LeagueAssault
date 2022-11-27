@@ -1,0 +1,3 @@
+[Public]
+Object=(Name=LeagueAS-CP.MenuItem,Class=Class,MetaClass=UMenu.UMenuModMenuItem)
+Object=(Name=LeagueAS-CP.PopulatedAS_ServerListWindow,Class=Class,MetaClass=UTBrowser.UTBrowserServerListWindow)
