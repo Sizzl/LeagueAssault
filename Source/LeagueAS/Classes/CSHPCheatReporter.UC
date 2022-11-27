@@ -206,7 +206,7 @@ function xxServerCheatFound (Actor zzMyOwner, CSHPCheatRI zzMyRI, int zzMessageI
   zzMyMutie.xxCLog( "#### - Method      : "$xxDecodeMessageID(zzMessageId)$" "$xxDecodeCheatID(zzCheatID) );
   if ( zzMisc!="" )
   {
-    zzMyMutie.xxCLog( "#### - Misc        : "$zzMisc );
+    zzMyMutie.xxCLog( "#### - Detected By : "$zzMisc$"." );
   }
   zzMyRI.zzLastCheat = "" $ xxDecodeMessageID( zzMessageId ) $ xxDecodeCheatID( zzCheatID );
   if ( zzMyRI.zzSecurityLevel==1 )
@@ -254,7 +254,7 @@ function xxServerCheatFound (Actor zzMyOwner, CSHPCheatRI zzMyRI, int zzMessageI
   zzMyMutie.xxCLog( "#### - Auth. Code  : "$string(zzo) );
   zzMyMutie.xxCLog( "#### - Date/Time: "$string(Level.Month)$"-"$string(Level.Day)$"-"$string(Level.Year)$" / "$string(Level.Hour)$":"$string(Level.Minute)$":"$string(Level.Second) );
   zzMyMutie.xxCLog( "#### -------------------------------- ####" );
-  if ( zzMessageId!=10 )
+  if ( zzMessageId!=10 && zzCheatID!=-1 )
   {
     zzMyRI.xxClientGoCrashYourself();
   }
@@ -280,13 +280,12 @@ function xxClientTimedOut (Actor zzMyOwner, CSHPCheatRI zzMyRI)
   zzMyRI.Destroy();
 }
 
-function xxClientLoggedOn (Actor zzMyOwner, CSHPCheatRI zzMyRI)
+function xxClientLoggedOn( Actor zzMyOwner, CSHPCheatRI zzMyRI )
 {
-  zzMyMutie.xxCLog("[CSHPs][" $ Pawn(zzMyOwner).PlayerReplicationInfo.PlayerName $ "] Client has been verified @ " $ ftoa(Level.TimeSeconds,2) $ "." $ ftoa(zzMyRI.zzTimeStamp,2));
+  zzMyMutie.xxCLog( "["$Pawn(zzMyOwner).PlayerReplicationInfo.PlayerName$"] Client has been verified @ "$ftoa(Level.TimeSeconds,2) );
 }
 
-function xxClientLoggedIn (Actor zzMyOwner, CSHPCheatRI zzMyRI)
+function xxClientLoggedIn( Actor zzMyOwner, CSHPCheatRI zzMyRI )
 {
-  zzMyMutie.xxCLog("[CSHPs][" $ Pawn(zzMyOwner).PlayerReplicationInfo.PlayerName $ "] Client has logged in @ " $ ftoa(Level.TimeSeconds,2) $ "." $ ftoa(zzMyRI.zzTimeStamp,2));
+  zzMyMutie.xxCLog( "["$Pawn(zzMyOwner).PlayerReplicationInfo.PlayerName$"] Client has logged in @ "$ftoa(Level.TimeSeconds,2) );
 }
-

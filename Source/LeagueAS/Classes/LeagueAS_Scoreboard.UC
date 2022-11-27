@@ -259,7 +259,7 @@ function DrawNameAndPing( Canvas Canvas, PlayerReplicationInfo PRI, float XOffse
     CanvasFont = Canvas.Font;
     Canvas.Font = Font'Engine.SmallFont';
     Canvas.DrawColor = WhiteColor;
-    if ( int(Level.NetMode)!=int(ENetMode.NM_Standalone) )
+    if ( Level.NetMode!=NM_Standalone )
     {
       Canvas.StrLen( PingString$":     ", XL, YL );
       Canvas.SetPos( XOffset-XL-float(6), YOffset );
@@ -272,8 +272,6 @@ function DrawNameAndPing( Canvas Canvas, PlayerReplicationInfo PRI, float XOffse
         if ( ePRI!=None && (ePRI.bMuteSay || ePRI.bMuteAll) )
         {
           Canvas.DrawColor = RedColor;
-          Canvas.StrLen( "          ", XL, YL );
-          Canvas.SetPos( XOffset-XL-float(6), YOffset+(YL+float(1))*float(2) );
           if ( ePRI.bMuteAll )
           {
             Canvas.DrawText( "MUTE ALL", false );
@@ -283,6 +281,11 @@ function DrawNameAndPing( Canvas Canvas, PlayerReplicationInfo PRI, float XOffse
             Canvas.DrawText( "MUTE ENEMY", false );
           }
           Canvas.DrawColor = WhiteColor;
+        }
+        else
+        {
+          Canvas.DrawColor = WhiteColor;
+          Canvas.DrawText( "NS:"@string(ePRI.NetSpeed), false );
         }
       }
     }

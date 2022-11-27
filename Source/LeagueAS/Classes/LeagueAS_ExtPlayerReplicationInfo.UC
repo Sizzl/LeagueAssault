@@ -15,11 +15,12 @@ var string Location;
 var string WeaponName;
 var int AmmoAmount;
 var bool bReadyToPlay;
+var int NetSpeed;
 
 replication
 {
   reliable if ( Role == ROLE_Authority )
-    PlayerName,Team,bMuteSay,bMuteAll,bModerator,Health,Armour,Location,WeaponName,AmmoAmount,bReadyToPlay;
+    PlayerName,Team,bMuteSay,bMuteAll,bModerator,Health,Armour,Location,WeaponName,AmmoAmount,bReadyToPlay,NetSpeed;
 }
 
 defaultproperties

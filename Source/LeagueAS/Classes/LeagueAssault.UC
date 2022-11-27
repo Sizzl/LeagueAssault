@@ -243,6 +243,31 @@ function string NearestObj (PlayerPawn Sender)
   }
 }
 
+function string NearestTeamMate( PlayerPawn Sender )
+{
+  local PlayerPawn PP, NearestPP;
+  local float DistToNearestPP, ThisPPDist;
+
+  DistToNearestPP = 0.0;
+  foreach AllActors( Class'PlayerPawn', PP )
+  {
+    ThisPPDist = DistanceFrom( Sender, PP );
+    if ( PP!=Sender && int(PP.PlayerReplicationInfo.Team)==int(Sender.PlayerReplicationInfo.Team) && (DistToNearestPP==float(0) || ThisPPDist<DistToNearestPP) )
+    {
+      NearestPP = PP;
+      DistToNearestPP = ThisPPDist;
+    }
+  }
+  if ( NearestPP!=None )
+  {
+    return NearestPP.PlayerReplicationInfo.PlayerName;
+  }
+  else
+  {
+    return "<NO TEAM MATES>";
+  }
+}
+
 function int GetArmourAmount( Pawn P )
 {
   local int ArmorAmount;
@@ -284,11 +309,11 @@ function string ProcessAdvancedSay( string Text, PlayerPawn Sender )
           }
           else
           {
-            LocationStr = "UNKNOWN";
+            LocationStr = "Near" @ NearestObj( Sender );
           }
           if ( LocationStr=="" )
           {
-            LocationStr = "UNKNOWN";
+            LocationStr = "Near" @ NearestObj( Sender );
           }
           FinalText = FinalText $ LocationStr;
         }
@@ -330,6 +355,10 @@ function string ProcessAdvancedSay( string Text, PlayerPawn Sender )
         else if ( TagName~="OBJECTIVE" )
         {
           FinalText = FinalText $ NearestObj( Sender );
+        }
+        else if ( TagName~="NEARESTTEAMMATE" )
+        {
+          FinalText = FinalText $ NearestTeamMate( Sender );
         }
       }
       else
@@ -669,19 +698,22 @@ event PlayerPawn Login (string Portal, string Options, out string Error, Class<P
   }
   Log("Modified Options - " $ ModOptions,'LeagueAssault');
   NewPlayer = Super.Login(Portal,ModOptions,Error,SpawnClass);
-  if ( bPracticeMode )
+  if ( NewPlayer!=None )
   {
-    NewPlayer.ReducedDamageType = 'All';
-  }
-  CO = Spawn(Class'ClientOptions',NewPlayer,,NewPlayer.Location);
-  ePRI = Spawn(Class'LeagueAS_ExtPlayerReplicationInfo',NewPlayer,,NewPlayer.Location);
-  if (bMatchMode)
-  {
-    NewPlayer.bAdmin = false;
-  }
-  else if ( ModeratorPassword!="" && Caps(InPassword)==Caps(ModeratorPassword) )
-  {
-    AddModerator( NewPlayer, InPassword );
+    if ( bPracticeMode )
+    {
+      NewPlayer.ReducedDamageType = 'All';
+    }
+    CO = Spawn( Class'ClientOptions', NewPlayer, , NewPlayer.Location );
+    ePRI = Spawn( Class'LeagueAS_ExtPlayerReplicationInfo', NewPlayer, , NewPlayer.Location );
+    if ( bMatchMode )
+    {
+      NewPlayer.bAdmin = false;
+    }
+    else if ( ModeratorPassword!="" && Caps(InPassword)==Caps(ModeratorPassword) )
+    {
+      AddModerator( NewPlayer, InPassword );
+    }
   }
   return NewPlayer;
 }
@@ -1311,6 +1343,7 @@ event Timer()
   local float DistToNearestFort, ThisFortDist;
   local Pawn ePRIOwner;
   local ClientOptions CO;
+  local CSHPCheatRI CRI;
 
   Super.Timer();
   if ( !bMatchMode )
@@ -1417,6 +1450,17 @@ event Timer()
         CO = None;
         ePRI.bMuteSay = false;
         ePRI.bMuteAll = false;
+      }
+      foreach AllActors( Class'CSHPCheatRI', CRI )
+      {
+        if ( ePRIOwner==CRI.Owner )
+        {
+          break;
+        }
+      }
+      if ( CRI!=None && ePRIOwner==CRI.Owner )
+      {
+        ePRI.NetSpeed = CRI.zzMyNetSpeed;
       }
       ePRI.PlayerName = ePRIOwner.PlayerReplicationInfo.PlayerName;
       ePRI.Team = int(ePRIOwner.PlayerReplicationInfo.Team);
@@ -1998,9 +2042,15 @@ defaultproperties
     ModeratorPassword="moderator"
     PrivateString="LOCKED - PRIVATE"
     PublicString="OPEN - PUBLIC"
-    VersionStr="1.34"
+    VersionStr="1.35"
     AttackMessage="Assault the enemy base!"
     WinMessage="and win!"
+    CurrentDefender=1
+    bDefenseSet=True
+    bTiePartOne=True
+    GameCode="22"
+    Part=2
+    TimeLimit=10
     bForceRespawn=True
     ScoreBoardType=Class'LeagueAS_Scoreboard'
     HUDType=Class'LeagueAS_HUD'

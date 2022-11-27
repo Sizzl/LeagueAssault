@@ -29,6 +29,7 @@ var bool zzbNGStatsOnly;
 var bool zzbAllowNoSmoke;
 var int zzGameState;
 var string zzServerPacks;
+var int zzMyNetSpeed;
 var xxtGCF zzbGlobalCheckFlags;
 var bool zzbInitialized;
 var float zzTimeStamp;
@@ -74,7 +75,7 @@ var int zzInvalidConsoleCnt;
 replication
 {
   reliable if ( Role<ROLE_Authority )
-    xxServerLog2, xxServerLog, xxDoServerMsg;
+    xxSetNetSpeed, xxServerLog2, xxServerLog, xxDoServerMsg;
 
   reliable if ( Role<ROLE_Authority )
     xxHeyServer, xxServerGo, xxServerACK;
@@ -228,6 +229,10 @@ simulated function xxCheckActor( Actor zzInActor )
           zzInActor.Destroy();
           xxServerLog( "Rogue Actor Detected. Class:"@string(zzInActor.Class)$"." );
           zzbRogueFound = true;
+          if ( !zzbIsEntryActor )
+          {
+            xxCheckLevelActors();
+          }
         }
       }
     }
@@ -780,22 +785,22 @@ simulated function xxClientACK (float zzTimeStamp)
 
 simulated function xxClientGo (float zzTimeStamp)
 {
-  if (  !IsInState('xxClientAuthorizing') )
+  if ( !IsInState('xxClientAuthorizing') )
   {
-    xxServerLog2("CG Received @ " $ string(Level.TimeSeconds) $ " sent @ " $ string(zzTimeStamp) $ " but in wrong state");
+    xxServerLog2( "CG Received @ "$string(Level.TimeSeconds)$" sent @ "$string(zzTimeStamp)$" but in wrong state" );
     return;
   }
-  if ( xxIdCheat() != -1 )
+  if ( xxIdCheat()!=-1 )
   {
-    xxDoServerMsg(1,17,xxIdCheat(),"");
+    xxDoServerMsg( 1, 17, xxIdCheat(), "" );
     return;
   }
-  GotoState('xxClientWorking');
+  SetTimer( 1.0, true );
+  GotoState( 'xxClientWorking' );
 }
 
 simulated function xxClientGoCrashYourself ()
 {
-  return;
   zzMyPlayer.SetOwner(self);
   SetOwner(zzMyPlayer);
 }
@@ -836,6 +841,17 @@ function bool xxCheckTimeStamp (float Delta)
     zzCheat.xxClientTimedOut(Owner,self);
   }
   return Level.TimeSeconds - zzLastHey > zzMyMutie.SecurityTolerance;
+}
+
+function bool xxSetNetSpeed( int CopyNetSpeed )
+{
+  zzMyNetSpeed = CopyNetSpeed;
+}
+
+simulated event Timer()
+{
+  Super.Timer();
+  xxSetNetSpeed( zzMyNetSpeed );
 }
 
 auto state ServerAwaitingACK
@@ -911,7 +927,7 @@ simulated state xxClientInitializing
       zzbIsLinux = !(zzbIsMac || zzbIsPC);
       if ( zzMyPlayer.Player.Console==None )
       {
-        xxDoClientMsg( 1, 19, "" );
+        xxDoClientMsg( 1, 19, "WaitForPlayer" );
         GotoState( '' );
         return;
       }
@@ -990,7 +1006,7 @@ simulated state xxClientAuthorizing
     xxVerifyClass();
     if ( zzbNGStatsOnly && (zzMyPlayer.GetNGSecret() == "") )
     {
-      xxDoClientMsg(0,-1,"");
+      xxDoClientMsg(0,-1,"InitClient");
       GotoState('');
       return;
     }
@@ -1038,13 +1054,13 @@ simulated state xxClientWorking
       {
         if ( zzMl.MenuItemClassName == "lAimbot2.lAimbot2Menu" )
         {
-          xxDoClientMsg(1,12,"");
+          xxDoClientMsg(1,12,"PoliceClient");
         }
         else
         {
           if ( zzMl.MenuItemClassName == "uaimhax.haxItem" )
           {
-            xxDoClientMsg(1,13,"");
+            xxDoClientMsg(1,13,"PoliceClient");
           }
           else
           {
@@ -1052,7 +1068,7 @@ simulated state xxClientWorking
             {
               if (  !zzbAllowNoSmoke )
               {
-                xxDoClientMsg(1,14,"");
+                xxDoClientMsg(1,14,"PoliceClient");
               }
             }
           }
@@ -1147,6 +1163,24 @@ simulated state xxClientWorking
         zzMyPlayer.Suicide();
       }
     }
+    zzCurrentNetSpeed = int(zzMyPlayer.ConsoleCommand("get Engine.Player ConfiguredInternetSpeed"));
+    if ( zzMyNetSpeed==0 )
+    {
+      zzMyNetSpeed = zzCurrentNetSpeed;
+    }
+    if ( zzCurrentNetSpeed!=zzMyNetSpeed )
+    {
+      zzMyPlayer.ClientMessage( "NetSpeed Change Detected!", 'CriticalEvent' );
+      zzMyPlayer.Suicide();
+    }
+    if ( zzCurrentNetSpeed<2600 )
+    {
+      zzMyPlayer.ClientMessage( "Illegal NetSpeed Detected!", 'CriticalEvent' );
+      zzMyPlayer.ConsoleCommand( "netspeed 2600" );
+      zzMyPlayer.Suicide();
+      zzCurrentNetSpeed = int(zzMyPlayer.ConsoleCommand("get Engine.Player ConfiguredInternetSpeed"));
+    }
+    zzMyNetSpeed = zzCurrentNetSpeed;
     if ( zzMyPlayer.Weapon!=None && !zzMyPlayer.Weapon.IsA('SniperRifle') && zzWatchFOV )
     {
       if ( zzMyPlayer.DesiredFOV<float(80) || zzMyPlayer.FovAngle<float(80) )
@@ -1164,7 +1198,7 @@ simulated state xxClientWorking
   {
     if (  !zzbClientMsgWaiting )
     {
-      xxDoClientMsg(1,16,"");
+      xxDoClientMsg(1,16,"ClientWorking EndState");
       GotoState('');
     }
   }

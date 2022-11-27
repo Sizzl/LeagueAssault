@@ -325,7 +325,9 @@ function Timer ()
       SpawnProtectActive = False;
       PlayerOwner.Style = PlayerOwner.Default.Style;
       PlayerOwner.ScaleGlow = PlayerOwner.Default.ScaleGlow;
-    } else {
+    }
+    else
+    {
       PlayerOwner.ScaleGlow = 1.0 / Counter * (Counter - Count-- );
     }
   }

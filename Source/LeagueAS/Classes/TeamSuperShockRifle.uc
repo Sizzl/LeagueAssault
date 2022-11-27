@@ -7,8 +7,15 @@ function SetHand( float hand )
 {
 	if ( int(Pawn(Owner).PlayerReplicationInfo.Team)!=0 )
 	{
-		PlayerViewMesh = LodMesh'Botpack.ASMD2M';
-		ThirdPersonMesh = LodMesh'Botpack.ASMD2hand';
+		MultiSkins[0] = Texture'Botpack.Skins.ASMD_t1';
+		MultiSkins[2] = Texture'Botpack.Skins.ASMD_t3';
+		MultiSkins[3] = Texture'Botpack.Skins.ASMD_t4';
+	}
+	else
+	{
+		MultiSkins[0] = Texture'Botpack.Skins.SASMD_t1';
+		MultiSkins[2] = Texture'Botpack.Skins.SASMD_t3';
+		MultiSkins[3] = Texture'Botpack.Skins.SASMD_t4';
 	}
 	Super.SetHand( hand );
 }

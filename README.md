@@ -7,6 +7,7 @@ A popular game-type modification for Unreal Tournament 1999, first established i
 * [Top](#leagueassault)
   * [History](#history)
   * [Release notes](#release-notes)
+    * [Version 135](#version-135)
     * [Version 134](#version-134)
     * [Version 133](#version-133)
     * [Versions 131-132](#versions-131-132)
@@ -26,14 +27,32 @@ Born out of an extension to the popular Unreal Tournament mutator "Eavy Assault 
 
 ## Release notes
 
+### Version 135
+
+- Netspeed tracking and limiting
+- Removed buggy laser fence in AS-AutoRIP
+- Updated Say/TeamSay commands
+- Added coloured rifles to iAS. To match the coloured beams
+- Fix bug with AutoRIP laser fence
+
+#### Netspeed
+
+Netspeed is now monitored and in-life changes are prevented. A players netspeed will now show on the scoreboard (unless mute is active) and players will suicide if they change their netspeed during the game. Netspeeds less than 2600 are not permitted.
+
+#### Say / Teamsay variables
+
+%NEARESTTEAMMATE% should be self explanitory, %LOCATION% has been changed to show the name of the nearest objective if location is unknown.
+
 ### Version 134
 
-Released Aoruk 2002.
+Released April 2002.
 
 - FOV bug fix
 - Fixed AntiHammerLaunch, AnitRocketLaunch & Mapvote mutators breaking ngstats compatibility
 - Replaced Attackers Pulse rifle with minigun on OceanFloor (quick and easy fix for the OceanFloor bug)
 - More CSHP improvements. Full rogue actor scanning is back, but at this stage not enabled by default
+- GolgothaAL: Pulse Rifle replaced with minigun ammo.
+- Overlord: Removed Teleporter exit objective trigger in Boiler room.
 
 ### Version 133
 Mostly bug fixes, plus an iAS mutator with team colours.
