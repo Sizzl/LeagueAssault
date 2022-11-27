@@ -13,6 +13,7 @@ var() config bool bStandardise;
 var() config bool bAuthorisePlayers;
 var() config bool bAdminNameScore;
 var() config bool bServerNameScore;
+var() config bool bServerNameGameType;
 var() config bool bAutoPausing;
 var() config int MaxPauseTime;
 var() config int PauseTimeRemaining[2];
@@ -69,19 +70,55 @@ function SetPassword( int Team, string Pass )
 
 function SetScoreStrings( string InScore )
 {
+  local string Prefix, Suffix;
+  local bool ISiAS;
+  local Mutator M;
+
   LeagueASGameReplicationInfo.MatchScore = InScore;
   if ( bAdminNameScore )
   {
     LeagueASGameReplicationInfo.AdminName = LeagueASGameReplicationInfo.MatchScore;
   }
+  if ( OldServerName=="" )
+  {
+    OldServerName = LeagueASGameReplicationInfo.ServerName;
+  }
   if ( bServerNameScore )
   {
-    if ( OldServerName=="" )
-    {
-      OldServerName = LeagueASGameReplicationInfo.ServerName;
-    }
-    LeagueASGameReplicationInfo.ServerName = OldServerName @ "[" $ LeagueASGameReplicationInfo.MatchScore $ "]";
+    Suffix = " [" $ LeagueASGameReplicationInfo.MatchScore $ "]";
   }
+  else
+  {
+    Suffix = "";
+  }
+  if ( bServerNameGameType )
+  {
+    ISiAS = false;
+    for ( M=BaseMutator; M!=None; M=M.NextMutator )
+    {
+      if ( M.IsA('InstaGibDM') || M.IsA('iAS') )
+      {
+        ISiAS = true;
+      }
+    }
+    if ( ISiAS )
+    {
+      Prefix = "iAS | ";
+    }
+    else if ( FriendlyFireScale==float(1) )
+    {
+      Prefix = "ProAS | ";
+    }
+    else
+    {
+      Prefix = "StdAS | ";
+    }
+  }
+  else
+  {
+    Prefix = "";
+  }
+  LeagueASGameReplicationInfo.ServerName = Prefix $ OldServerName $ Suffix;
 }
 
 function int GetWinningTeam()
@@ -1958,7 +1995,7 @@ defaultproperties
     TeamNameRed="Red"
     TeamNameBlue="Blue"
     ModeratorPassword="moderator"
-    VersionStr="1.30"
+    VersionStr="1.33"
     AttackMessage="Assault the enemy base!"
     WinMessage="and win!"
     bForceRespawn=True

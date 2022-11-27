@@ -95,6 +95,12 @@ function string xxDecodeMessageID (int zzMessageId)
     case 21:
     return "Rogue Actor Detected";
     break;
+    case 22:
+    return "Rogue Scanner No Longer Attached to CSHP";
+    break;
+    case 23:
+    return "CSHP No Longer Attached to Rogue Scanner";
+    break;
     default:
     return "Unknown Message sent to Server (" $ string(zzMessageId) $ ")";
     break;

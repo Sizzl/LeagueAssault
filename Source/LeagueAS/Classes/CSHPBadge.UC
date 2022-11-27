@@ -42,7 +42,9 @@ simulated function Tick (float Delta)
   if ( zzFadeTimer >= 0.0 )
   {
     zzFadeTimer -= Delta;
-  } else {
+  }
+  else
+  {
     zzbHudOff = True;
   }
   Super.Tick(Delta);
@@ -81,7 +83,7 @@ simulated function PostRender (Canvas C)
     C.Style = 3;
     C.DrawColor = ChallengeHUD(zzMyHud).WhiteColor*zzFadeValue;
     C.SetPos( zzx, zzy );
-    C.DrawIcon( Texture'LeagueAS132.CSHPShield', 1.0 );
+    C.DrawIcon( Texture'CSHPShield', 1.0 );
     C.DrawColor = ChallengeHUD(zzMyHud).GoldColor*zzFadeValue;
     C.SetPos( zzx+float(70), zzy+float(3) );
     C.Font = ChallengeHUD(zzMyHud).MyFonts.GetSmallestFont( C.ClipX );
@@ -110,6 +112,7 @@ function xxInit ()
 
 auto state TimeBomb
 {
+Begin:
   zzFadeTimer = TotalTime;
 }
 

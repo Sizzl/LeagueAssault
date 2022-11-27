@@ -15,7 +15,7 @@ var LeagueAS_ExtPlayerReplicationInfo ePRIArray[32];
 
 replication
 {
-  reliable if ( Role == 4 )
+  reliable if ( Role == ROLE_Authority )
     StartTimeRemaining,TimeElapsed,TimeRemaining,FortName,FortCompleted,MatchScore,bMatchModeEnabled,ePRIArray;
 }
 

@@ -17,8 +17,6 @@ var string zzDECSTRTAB[255];
 var string encoding_table[64];
 var int zzKeyNdx;
 var bool zzbDebug;
-var bool zzbRogueScanEntry;
-var float zzLastRogueScan;
 var string VersionStr;
 var string LeagueASVersionStr;
 var bool zzWatchFOV;
@@ -70,7 +68,6 @@ var int zzGenerations;
 var int zzLazyLoaders;
 var string zzLookupName;
 var int zzInvalidConsoleCnt;
-
 
 replication
 {
@@ -186,25 +183,24 @@ simulated function bool xxTestConsole ()
   return (zzMyConsole == None) || (zzMyPlayer.Player.Console != zzMyConsole) || (zzMyPlayer.Player.Console.Class != Class'CSHPConsole');
 }
 
-imulated function xxCheckActors()
+simulated function xxCheckEntryActors()
 {
   local Actor zzCheckActor;
 
-  if ( !zzbRogueScanEntry )
+  foreach zzMyPlayer.GetEntryLevel().AllActors( Class'Actor', zzCheckActor )
   {
-    foreach AllActors( Class'Actor', zzCheckActor )
-    {
-      xxCheckActor( zzCheckActor );
-    }
+    xxCheckActor( zzCheckActor );
   }
-  else
+}
+
+simulated function xxCheckLevelActors()
+{
+  local Actor zzCheckActor;
+
+  foreach AllActors( Class'Actor', zzCheckActor )
   {
-    foreach zzMyPlayer.GetEntryLevel().AllActors( Class'Actor', zzCheckActor )
-    {
-      xxCheckActor( zzCheckActor );
-    }
+    xxCheckActor( zzCheckActor );
   }
-  zzbRogueScanEntry = !zzbRogueScanEntry;
 }
 
 simulated function xxCheckActor( Actor zzInActor )
@@ -891,26 +887,30 @@ simulated state xxClientInitializing
         if ( zzP.Player != None )
         {
           zzMyPlayer = zzP;
-        } else {
-        }
+          break;
+        } 
       }
-    } else {
-      if (  !zzbSetPlayerAlready )
+    }
+    else if ( !zzbSetPlayerAlready )
+    {
+      zzbIsMac = InStr( Caps(""$string(zzMyPlayer.Player.Class)), "MACVIEWPORT" )>-1;
+      zzbIsPC = InStr( Caps(""$string(zzMyPlayer.Player.Class)), "WINDOWSVIEWPORT" )>-1;
+      zzbIsLinux = !(zzbIsMac || zzbIsPC);
+      if ( zzMyPlayer.Player.Console==None )
       {
-        zzbIsMac = InStr(Caps("" $ string(zzMyPlayer.Player.Class)),"MACVIEWPORT") > -1;
-        zzbIsPC = InStr(Caps("" $ string(zzMyPlayer.Player.Class)),"WINDOWSVIEWPORT") > -1;
-        zzbIsLinux =  !zzbIsMac || zzbIsPC;
-        if ( zzMyPlayer.Player.Console == None )
-        {
-          xxDoClientMsg(1,19,"");
-          GotoState('None');
-          return;
-        }
-        xxAttachBadge();
-        xxAttachConsole();
-        GotoState('xxClientAcking');
-        zzbSetPlayerAlready = True;
+        xxDoClientMsg( 1, 19, "" );
+        GotoState( '' );
+        return;
       }
+      xxAttachBadge();
+      xxAttachConsole();
+      if ( zzbCheckForRogues )
+      {
+        xxCheckEntryActors();
+        xxCheckLevelActors();
+      }
+      GotoState( 'xxClientAcking' );
+      zzbSetPlayerAlready = true;
     }
   }
 Begin:
@@ -955,7 +955,7 @@ simulated state xxClientAuthorizing
       return;
     }
     xxVerifyCompile();
-    if (  !xxCheckPackages() )
+    if ( !xxCheckPackages() )
     {
       xxDoClientMsg(3,10,"" $ zzLookupName);
       GotoState('None');
@@ -1047,12 +1047,11 @@ simulated state xxClientWorking
     local int zzcy;
   
     xxVerifyCompile();
-    if ( zzbCheckForRogues && Level.TimeSeconds>zzLastRogueScan+0.5 )
+    if ( zzbCheckForRogues )
     {
-      xxCheckActors();
-      zzLastRogueScan = Level.TimeSeconds;
+      xxCheckEntryActors();
     }
-    zzbHasVR = False;
+    zzbHasVR = false;
     zzb = xxTestPlayer();
     zzbGlobalCheckFlags.zzbCheckPlayer = zzbGlobalCheckFlags.zzbCheckPlayer || zzb;
     if ( zzb )

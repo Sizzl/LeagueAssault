@@ -221,7 +221,6 @@ function Tick( float DeltaTime )
     }
     if ( zzP.IsA('PlayerPawn') && !zzP.IsA('Spectator') && NetConnection(PlayerPawn(zzP).Player)!=None && !zzP.IsA('MessagingSpectator') && xxFindPIndexFor(zzP)==-1 )
     {
-      Log( "[CSHPs]["$zzP.PlayerReplicationInfo.PlayerName$"] Spawning C" );
       zzi = 0;
       while ( zzi<32 && zzPlayerList[zzi]!=None )
       {
@@ -250,7 +249,6 @@ function Tick( float DeltaTime )
         zzRI.zzServerPacks = zzMyPacks;
         zzMyCheat.xxClientLoggedIn( zzP, zzRI );
         zzRI.zzTimeOutGrace = Level.TimeSeconds+SecurityFrequency*Level.TimeDilation*float(3);
-      }
       }
     }
   }

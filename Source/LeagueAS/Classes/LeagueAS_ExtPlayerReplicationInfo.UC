@@ -18,7 +18,7 @@ var bool bReadyToPlay;
 
 replication
 {
-  reliable if ( Role == 4 )
+  reliable if ( Role == ROLE_Authority )
     PlayerName,Team,bMuteSay,bMuteAll,bModerator,Health,Armour,Location,WeaponName,AmmoAmount,bReadyToPlay;
 }
 

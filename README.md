@@ -7,6 +7,7 @@ A popular game-type modification for Unreal Tournament 1999, first established i
 * [Top](#leagueassault)
   * [History](#history)
   * [Release notes](#release-notes)
+    * [Version 133](#version-133)
     * [Versions 131-132](#versions-131-132)
     * [Version 130](#version-130)
     * [Versions 125-129 beta](#versions-125-129-beta)
@@ -24,11 +25,20 @@ Born out of an extension to the popular Unreal Tournament mutator "Eavy Assault 
 
 ## Release notes
 
+### Version 133
+Mostly bug fixes, plus an iAS mutator with team colours.
+
+- Fixed Bridge Box exploit
+- Fixed Enhanced CSHP causing 1 second pauses on large maps
+- Altered CSHP so that it will only crash on a known cheat, if it cannot identify a hack it will only kick, not crash the client
+- Added bServerNameGameType option to auto prefix the server name with StdAS / ProAS/ iAS depending on game type
+- Added built in InstaGIB Assault mutator with team coloured instagib shots
+
 ### Versions 131-132
 
 Released March 2002.
 
-- Introduced AntiHammerLaunch, AntiRocketLaunch and iAS mutators (131)
+- Introduced AntiHammerLaunch and AntiRocketLaunch mutators (131)
 - Auto Pausing
 - PublicString & PrivateString Variables: Allows server admin to customise the string that is displayed by bAdminNameScore and bServerNameScore options
 - Fixed Elapsed Time not working in offline/practice mode

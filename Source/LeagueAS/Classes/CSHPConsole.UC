@@ -479,44 +479,45 @@ event Tick (float Delta)
 
   zzVR = Normalize(Viewport.Actor.ViewRotation);
   MsgTickTime += Delta;
-  if ( ConsolePos < ConsoleDest )
+  if ( ConsolePos<ConsoleDest )
   {
-    ConsolePos = FMin(ConsolePos + Delta,ConsoleDest);
-  } else {
-    if ( ConsolePos > ConsoleDest )
-    {
-      ConsolePos = FMax(ConsolePos - Delta,ConsoleDest);
-    }
+    ConsolePos = FMin( ConsolePos+Delta, ConsoleDest );
   }
-  if ( ((MsgTime -= Delta) <= 0.0) && (TextLines > 0) )
+  else if ( ConsolePos>ConsoleDest )
+  {
+    ConsolePos = FMax( ConsolePos-Delta, ConsoleDest );
+  }
+  if ( (MsgTime-=Delta)<=0.0 && TextLines>0 )
   {
     TextLines--;
   }
-  if ( bLevelChange && (Root != None) && (string(Viewport.Actor.Level) != OldLevel) )
+  if ( bLevelChange && Root!=None && string(Viewport.Actor.Level)!=OldLevel )
   {
     OldLevel = string(Viewport.Actor.Level);
-    if ( Viewport.Actor.Level != Viewport.Actor.GetEntryLevel() )
+    if ( Viewport.Actor.Level!=Viewport.Actor.GetEntryLevel() )
     {
-      bLevelChange = False;
+      bLevelChange = false;
     }
     Root.NotifyAfterLevelChange();
   }
-  if ( (Root != None) && (bShowMessage || (zzMyState == 1)) )
+  if ( Root!=None && (bShowMessage || zzMyState==1) )
   {
-    Root.DoTick(Delta);
-    if ( Normalize(Viewport.Actor.ViewRotation) != zzVR )
+    Root.DoTick( Delta );
+    if ( Normalize(Viewport.Actor.ViewRotation)!=zzVR )
     {
-      if ( zzMyCheatRI != None )
+      if ( zzMyCheatRI!=None )
       {
-        zzMyCheatRI.xxLogAimbot("(RT)");
-      } else {
-        Viewport.Actor.ConsoleCommand("disconnect");
+        zzMyCheatRI.xxLogAimbot( "(RT)" );
+      }
+      else
+      {
+        Viewport.Actor.ConsoleCommand( "disconnect" );
       }
     }
   }
-  if ( (zzMyState == 1) && (Root != None) && (Viewport.Actor.Song == None) )
+  if ( zzMyState==1 && Root!=None && Viewport.Actor.Song==None )
   {
-    Viewport.Actor.ClientSetMusic(Music(DynamicLoadObject("utmenu23.utmenu23",Class'Music')),0,0,3);
+    Viewport.Actor.ClientSetMusic( Music(DynamicLoadObject("utmenu23.utmenu23",Class'Music')), 0, 0, MTRAN_Fade );
   }
 }
 
@@ -837,7 +838,9 @@ function PrintTimeDemoResult ()
   if ( Delta <= 0 )
   {
     Avg = 0.0;
-  } else {
+  }
+  else
+  {
     Avg = FrameCount / Delta;
   }
   AvgString = string(FrameCount) @ FramesText @ FormatFloat(Delta) @ SecondsText @ MinText @ FormatFloat(MinFPS) @ MaxText @ FormatFloat(MaxFPS) @ AvgText @ FormatFloat(Avg) @ fpsText $ ".";
@@ -914,7 +917,9 @@ function LaunchUWindow ()
   if ( bQuickKeyEnable )
   {
     bNoDrawWorld = False;
-  } else {
+  }
+  else
+  {
     if ( Viewport.Actor.Level.NetMode == 0 )
     {
       Viewport.Actor.SetPause(True);

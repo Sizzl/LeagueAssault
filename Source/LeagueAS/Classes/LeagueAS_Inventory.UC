@@ -16,7 +16,9 @@ var int Count;
 replication
 {
   reliable if ( Role < ROLE_Authority )
-    ThrowArmour,AdvancedSay,AdvancedTeamSay,SummonItem,Echo,ToggleMute,ChangeTeams,ShowMatchScore,Moderator,ModeratorLogout,ModeratorLogin;
+    ThrowArmor, ThrowArmour, SummonItem, CancelPause, RequestPause, Echo,
+    ToggleMute, ChangeTeams, ShowMatchScore, Moderator, ModeratorLogout,
+    ModeratorLogin;
 }
 
 event Spawned ()
@@ -104,40 +106,39 @@ exec function ModeratorLogout ()
   LeagueAssaultGame.RemoveModerator(PlayerPawn(PlayerOwner));
 }
 
-exec function Moderator (string CommandLine)
+exec function Moderator( string CommandLine )
 {
   local string Command;
 
   if ( LeagueAssaultGame.IsAModerator(PlayerPawn(PlayerOwner)) )
   {
-    Command = Left(CommandLine,InStr(CommandLine," "));
-    if ( Command ~= "servertravel" )
+    Command = Left( CommandLine, InStr(CommandLine," ") );
+    if ( Command~="servertravel" )
     {
-      ConsoleCommand(CommandLine);
-      Log(PlayerOwner.PlayerReplicationInfo.PlayerName @ "issued moderator command:" @ CommandLine $ ".");
-    } else {
-      if ( Command ~= "kick" )
-      {
-        PlayerPawn(PlayerOwner).bAdmin = True;
-        PlayerPawn(PlayerOwner).Kick(Mid(CommandLine,InStr(CommandLine," ") + 1,Len(CommandLine) - InStr(CommandLine," ")));
-        PlayerPawn(PlayerOwner).bAdmin = False;
-        Log(PlayerOwner.PlayerReplicationInfo.PlayerName @ "issued moderator command:" @ CommandLine $ ".");
-      } else {
-        if ( Command ~= "summon" )
-        {
-          PlayerPawn(PlayerOwner).bAdmin = True;
-          PlayerPawn(PlayerOwner).Summon(Mid(CommandLine,InStr(CommandLine," ") + 1,Len(CommandLine) - InStr(CommandLine," ")));
-          PlayerPawn(PlayerOwner).bAdmin = False;
-          Log(PlayerOwner.PlayerReplicationInfo.PlayerName @ "issued moderator command:" @ CommandLine $ ".");
-        } else {
-          if ( CommandLine ~= "stopcountdown" )
-          {
-            StopCountDown();
-          } else {
-            PlayerOwner.ClientMessage("Unrecognised or unauthorised command.");
-          }
-        }
-      }
+      ConsoleCommand( CommandLine );
+      Log( PlayerOwner.PlayerReplicationInfo.PlayerName@"issued moderator command:"@CommandLine$"." );
+    }
+    else if ( Command~="kick" )
+    {
+      PlayerPawn(PlayerOwner).bAdmin = true;
+      PlayerPawn(PlayerOwner).Kick( Mid(CommandLine,InStr(CommandLine," ")+1,Len(CommandLine)-InStr(CommandLine," ")) );
+      PlayerPawn(PlayerOwner).bAdmin = false;
+      Log( PlayerOwner.PlayerReplicationInfo.PlayerName@"issued moderator command:"@CommandLine$"." );
+    }
+    else if ( Command~="summon" )
+    {
+      PlayerPawn(PlayerOwner).bAdmin = true;
+      PlayerPawn(PlayerOwner).Summon( Mid(CommandLine,InStr(CommandLine," ")+1,Len(CommandLine)-InStr(CommandLine," ")) );
+      PlayerPawn(PlayerOwner).bAdmin = false;
+      Log( PlayerOwner.PlayerReplicationInfo.PlayerName@"issued moderator command:"@CommandLine$"." );
+    }
+    else if ( CommandLine~="stopcountdown" )
+    {
+      StopCountDown();
+    }
+    else
+    {
+      PlayerOwner.ClientMessage( "Unrecognised or unauthorised command." );
     }
   }
 }
@@ -261,16 +262,6 @@ exec function SummonItem (string ClassName)
     }
     BroadcastMessage(PlayerOwner.PlayerReplicationInfo.PlayerName @ "-> Summon" @ ClassName,True,'CriticalEvent');
   }
-}
-
-exec function AdvancedTeamSay (string Text)
-{
-  LeagueAssaultGame.PEFAdvancedTeamSay(Text,PlayerPawn(PlayerOwner));
-}
-
-exec function AdvancedSay (string Text)
-{
-  LeagueAssaultGame.PEFAdvancedSay(Text,PlayerPawn(PlayerOwner));
 }
 
 exec function ThrowArmour( int ArmourType )
