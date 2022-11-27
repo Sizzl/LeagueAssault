@@ -3,6 +3,16 @@
 //=============================================================================
 class TeamSuperShockRifle extends SuperShockRifle;
 
+function SetHand( float hand )
+{
+	if ( int(Pawn(Owner).PlayerReplicationInfo.Team)!=0 )
+	{
+		PlayerViewMesh = LodMesh'Botpack.ASMD2M';
+		ThirdPersonMesh = LodMesh'Botpack.ASMD2hand';
+	}
+	Super.SetHand( hand );
+}
+
 function SpawnEffect( vector HitLocation, vector SmokeLocation )
 {
 	local supershockbeam RedBeam;

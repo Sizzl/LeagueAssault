@@ -12,7 +12,7 @@ var int zzKeyNdx;
 var() config int SecurityLevel;
 var() config float SecurityFrequency;
 var() config float SecurityTolerance;
-var() config bool bScanForRogues;
+var() config int ScanForRogues;
 var() config bool bTrackFOV;
 var() config bool bTrackCV;
 var() config int Advertise;
@@ -38,7 +38,6 @@ var float zzTeamChangeTime;
 var int zzGameState;
 var string VersionStr;
 var CSHPLog zzCheatLog;
-
 
 function xxPreDecrypt()
 {
@@ -94,7 +93,7 @@ function PostBeginPlay()
   xxCLog( "Security Level is ............. "$string(SecurityLevel) );
   xxCLog( "Security Frequency is ......... "$string(SecurityFrequency) );
   xxCLog( "Security Tolerance is ......... "$string(SecurityTolerance) );
-  xxCLog( "Scanning for Rogue Actors ..... "$string(bScanForRogues) );
+  xxCLog( "Scanning for Rogue Actors ..... "$string(ScanForRogues) );
   xxCLog( "Tracking FOV .................. "$string(bTrackFOV) );
   xxCLog( "Tracking CV ................... "$string(bTrackCV) );
   xxCLog( "Only Admin Kick ............... "$string(bOnlyAdminKick) );
@@ -239,7 +238,7 @@ function Tick( float DeltaTime )
         zzPlayerNetSpeed[zzi] = 0;
         zzRI.zzMyMutie = Self;
         zzRI.zzSecurityLevel = SecurityLevel;
-        zzRI.zzbCheckForRogues = bScanForRogues;
+        zzRI.zzCheckForRogues = ScanForRogues;
         zzRI.zzWatchFOV = bTrackFOV;
         zzRI.zzWatchCV = bTrackCV;
         zzRI.zzbNGStatsOnly = bNGStatsOnly;
@@ -307,7 +306,7 @@ function Mutate( string MutateString, PlayerPawn Sender )
   {
     Sender.ClientMessage( "This server is running "$VersionStr );
     Sender.ClientMessage( "Security Level is: "$string(SecurityLevel) );
-    Sender.ClientMessage( "Scanning for Rogues: "$string(bScanForRogues) );
+    Sender.ClientMessage( "Scanning for Rogues: "$string(ScanForRogues) );
     Sender.ClientMessage( "Tracking FOV: "$string(bTrackFOV) );
     Sender.ClientMessage( "Tracking CV: "$string(bTrackCV) );
     Sender.ClientMessage( "Only Admin Kick: "$string(bOnlyAdminKick) );
@@ -724,7 +723,7 @@ defaultproperties
     SecurityLevel=1
     SecurityFrequency=2.00
     SecurityTolerance=60.00
-    bScanForRogues=True
+    ScanForRogues=1
     bTrackFOV=1
     bTrackCV=True
     bOnlyAdminKick=True

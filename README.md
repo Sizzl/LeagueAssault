@@ -7,6 +7,7 @@ A popular game-type modification for Unreal Tournament 1999, first established i
 * [Top](#leagueassault)
   * [History](#history)
   * [Release notes](#release-notes)
+    * [Version 134](#version-134)
     * [Version 133](#version-133)
     * [Versions 131-132](#versions-131-132)
     * [Version 130](#version-130)
@@ -24,6 +25,15 @@ A popular game-type modification for Unreal Tournament 1999, first established i
 Born out of an extension to the popular Unreal Tournament mutator "Eavy Assault Plus", the Advanced Assault project team began working on additional fixes, enhancements and maps to suplement the leagues running at utassault.net.
 
 ## Release notes
+
+### Version 134
+
+Released Aoruk 2002.
+
+- FOV bug fix
+- Fixed AntiHammerLaunch, AnitRocketLaunch & Mapvote mutators breaking ngstats compatibility
+- Replaced Attackers Pulse rifle with minigun on OceanFloor (quick and easy fix for the OceanFloor bug)
+- More CSHP improvements. Full rogue actor scanning is back, but at this stage not enabled by default
 
 ### Version 133
 Mostly bug fixes, plus an iAS mutator with team colours.

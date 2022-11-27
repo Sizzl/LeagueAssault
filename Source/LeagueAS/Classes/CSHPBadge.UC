@@ -120,5 +120,5 @@ defaultproperties
 {
     FadeOut=10.00
     TotalTime=20.00
-    VersionStr="CSHP4 v1.7.29"
+    VersionStr="Enhanced CSHP"
 }

@@ -435,8 +435,3 @@ function DrawStatus (Canvas Canvas)
   }
   DrawBigNum( Canvas, Min(150,ArmorAmount), int(X+float(4)*Scale), int(Y+float(16)*Scale), 1.0 );
 }
-
-defaultproperties
-{
-    bAlwaysTick=True
-}

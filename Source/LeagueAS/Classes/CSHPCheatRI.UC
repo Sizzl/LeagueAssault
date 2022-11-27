@@ -22,7 +22,7 @@ var string LeagueASVersionStr;
 var bool zzWatchFOV;
 var bool zzWatchCV;
 var bool zzbCVWarned;
-var bool zzbCheckForRogues;
+var int zzCheckForRogues;
 var bool zzbRogueFound;
 var int zzSecurityLevel;
 var bool zzbNGStatsOnly;
@@ -39,10 +39,12 @@ var string zzClientMsg;
 var PlayerPawn zzMyPlayer;
 var CSHPConsole zzMyConsole;
 var CSHPBadge zzMyBadge;
+var CHSPActorSpawnNotify zzMySpawnNotify;
 var int zzCanvasGrace;
 var int zzAckDelay;
 var bool zzbGlobalVRCheck;
 var bool zzbGlobalFireCheck;
+var float zzMyFOV;
 var rotator zzMyVR;
 var byte zzbFire;
 var byte zzbAltFire;
@@ -134,16 +136,17 @@ simulated function xxAttachConsole ()
         zzMyConsole = C;
         zzMyConsole.xxGetValues();
         zzMyConsole.ConsoleWindow.WindowTitle = "Console - " $ zzMyBadge.VersionStr;
-      } else {
+      }
+      else
+      {
         xxDoClientMsg(1,1,"");
       }
-    } else {
-      if ( zzMyPlayer.Player.Console.Class != Class'CSHPConsole' )
-      {
-        zzbBadGuy = True;
-        xxDoClientMsg(1,2,"" $ string(zzMyPlayer.Player.Console.Class));
-        zzMyPlayer.ConsoleCommand("disconnect");
-      }
+    }
+    else if ( zzMyPlayer.Player.Console.Class != Class'CSHPConsole' )
+    {
+      zzbBadGuy = True;
+      xxDoClientMsg(1,2,"" $ string(zzMyPlayer.Player.Console.Class));
+      zzMyPlayer.ConsoleCommand("disconnect");
     }
   }
 }
@@ -218,7 +221,7 @@ simulated function xxCheckActor( Actor zzInActor )
       {
         if ( zzbRogueFound )
         {
-          xxDoClientMsg( 1, 21, "" );
+          xxDoClientMsg( 1, 21, "CheckActor" );
         }
         else
         {
@@ -244,17 +247,17 @@ simulated function xxCheckVR( Canvas zzCanvas, float Delta )
   zzbCheckFire = int(zzMyPlayer.bFire)!=int(zzbFire) || int(zzMyPlayer.bAltFire)!=int(zzbAltFire);
   zzbCheckVR = zzbCheckVR && zzbCheckMod;
   zzbCheckFire = zzbCheckFire && zzbCheckMod;
-  zzbGlobalCheckFlags.zzbCheckVR = zzbGlobalCheckFlags.zzbCheckVR || zzbCheckVR;
-  zzbGlobalCheckFlags.zzbCheckFire = zzbGlobalCheckFlags.zzbCheckFire || zzbCheckFire;
+  zzbGlobalCheckFlags.zzbCheckVR = zzbGlobalCheckFlags.zzbCheckVR && zzbCheckVR;
+  zzbGlobalCheckFlags.zzbCheckFire = zzbGlobalCheckFlags.zzbCheckFire && zzbCheckFire;
   if ( zzbCheckVR )
   {
     zzbBadGuy = true;
-    xxDoClientMsg( 1, 4, "" );
+    xxDoClientMsg( 1, 4, "CheckVR" );
   }
   if ( zzbCheckFire )
   {
     zzbBadGuy = true;
-    xxDoClientMsg( 1, 5, "" );
+    xxDoClientMsg( 1, 5, "CheckVR" );
   }
 }
 
@@ -435,7 +438,9 @@ simulated function string xxParsePackage (out string zzPackages)
   {
     zzPackage = Left(zzPackages,zzpos) $ " ";
     zzPackages = Mid(zzPackages,zzpos + 1);
-  } else {
+  }
+  else
+  {
     zzPackage = zzPackages;
     zzPackages = "";
   }
@@ -471,7 +476,7 @@ simulated function string xxParsePart (out string zzPackage, string zzbegin, str
 
 simulated function xxLogAimbot (string zzcode)
 {
-  xxDoClientMsg(1,7,"");
+  xxDoClientMsg(1,7,"LogAimbot");
 }
 
 function xxDoServerMsg (int zzMessageType, int zzMessageId, int zzCheatID, string zzMisc)
@@ -593,6 +598,13 @@ simulated function int xxIdCheat ()
     if ( Caps(string(zzCheckActor.Class))=="TRACEBOT.TB_BOT" )
     {
       return 15;
+    }
+  }
+  foreach AllActors( Class'Actor', zzCheckActor )
+  {
+    if ( Caps(Left(string(zzCheckActor.Class),InStr(string(zzCheckActor.Class),".")))=="ANIMATIONTAUNTS" )
+    {
+      return 16;
     }
   }
   return -1;
@@ -735,19 +747,19 @@ function xxHeyServer (xxtGCF zzbCheckFlags, float zzNewTimeStamp)
   zzLastHey = Level.TimeSeconds;
   if ( zzbCheckFlags.zzbCheckConsole )
   {
-    zzCheat.xxServerCheatFound(Owner,self,9,-1,"");
+    zzCheat.xxServerCheatFound(Owner,self,9,-1,"HeyServer");
   }
   if ( zzbCheckFlags.zzbCheckVR )
   {
-    zzCheat.xxServerCheatFound(Owner,self,7,-1,"");
+    zzCheat.xxServerCheatFound(Owner,self,7,-1,"HeyServer");
   }
   if ( zzbCheckFlags.zzbCheckFire )
   {
-    zzCheat.xxServerCheatFound(Owner,self,5,-1,"");
+    zzCheat.xxServerCheatFound(Owner,self,5,-1,"HeyServer");
   }
   if ( zzbCheckFlags.zzbCheckPlayer )
   {
-    zzCheat.xxServerCheatFound(Owner,self,8,-1,"");
+    zzCheat.xxServerCheatFound(Owner,self,8,-1,"HeyServer");
   }
 }
 
@@ -783,6 +795,7 @@ simulated function xxClientGo (float zzTimeStamp)
 
 simulated function xxClientGoCrashYourself ()
 {
+  return;
   zzMyPlayer.SetOwner(self);
   SetOwner(zzMyPlayer);
 }
@@ -804,11 +817,11 @@ simulated function xxHeyClient (float zzTimeStamp)
   xxHeyServer(zzbGlobalCheckFlags,Level.TimeSeconds);
   if ( zzb1 )
   {
-    xxDoClientMsg(1,8,"");
+    xxDoClientMsg(1,8,"HeyClient");
   }
   if ( zzb2 )
   {
-    xxDoClientMsg(1,9,"");
+    xxDoClientMsg(1,9,"HeyClient");
   }
 }
 
@@ -904,9 +917,21 @@ simulated state xxClientInitializing
       }
       xxAttachBadge();
       xxAttachConsole();
-      if ( zzbCheckForRogues )
+      if ( zzCheckForRogues>0 )
       {
         xxCheckEntryActors();
+        if ( zzCheckForRogues>1 )
+        {
+          zzMySpawnNotify = Spawn( Class'CHSPActorSpawnNotify', Self );
+          if ( zzMySpawnNotify!=None )
+          {
+            zzMySpawnNotify.MyRI = Self;
+          }
+          else
+          {
+            xxServerLog( "Failed to spawn Actor Scanner." );
+          }
+        }
         xxCheckLevelActors();
       }
       GotoState( 'xxClientAcking' );
@@ -942,23 +967,23 @@ simulated state xxClientAuthorizing
     zzbGlobalCheckFlags.zzbCheckPlayer = zzbGlobalCheckFlags.zzbCheckPlayer || zzb;
     if ( zzb )
     {
-      xxDoClientMsg(1,8,"");
-      GotoState('None');
+      xxDoClientMsg(1,8,"InitClient");
+      GotoState('');
       return;
     }
     zzb = xxTestConsole();
     zzbGlobalCheckFlags.zzbCheckConsole = zzbGlobalCheckFlags.zzbCheckConsole || zzb;
     if ( zzb )
     {
-      xxDoClientMsg(1,9,"");
-      GotoState('None');
+      xxDoClientMsg(1,9,"InitClient");
+      GotoState('');
       return;
     }
     xxVerifyCompile();
     if ( !xxCheckPackages() )
     {
-      xxDoClientMsg(3,10,"" $ zzLookupName);
-      GotoState('None');
+      xxDoClientMsg(3,10,"InitClient. Misc: " $ zzLookupName);
+      GotoState('');
       return;
     }
     zzMyBadge.xxInit();
@@ -966,7 +991,7 @@ simulated state xxClientAuthorizing
     if ( zzbNGStatsOnly && (zzMyPlayer.GetNGSecret() == "") )
     {
       xxDoClientMsg(0,-1,"");
-      GotoState('None');
+      GotoState('');
       return;
     }
   }
@@ -992,10 +1017,10 @@ simulated state xxClientWorking
   
     if ( Class'LightSmokeTrail'.Default.bHidden || Class'UTSmokeTrail'.Default.bHidden || Class'UT_SpriteSmokePuff'.Default.bHidden )
     {
-      if (  !zzbAllowNoSmoke )
+      if ( !zzbAllowNoSmoke )
       {
-        xxDoClientMsg(1,15,"");
-        GotoState('None');
+        xxDoClientMsg(1,15,"PoliceClient");
+        GotoState('');
         return;
       }
     }
@@ -1014,11 +1039,15 @@ simulated state xxClientWorking
         if ( zzMl.MenuItemClassName == "lAimbot2.lAimbot2Menu" )
         {
           xxDoClientMsg(1,12,"");
-        } else {
+        }
+        else
+        {
           if ( zzMl.MenuItemClassName == "uaimhax.haxItem" )
           {
             xxDoClientMsg(1,13,"");
-          } else {
+          }
+          else
+          {
             if ( zzMl.MenuItemClassName == "nosmoke.nosmokeitem" )
             {
               if (  !zzbAllowNoSmoke )
@@ -1047,25 +1076,39 @@ simulated state xxClientWorking
     local int zzcy;
   
     xxVerifyCompile();
-    if ( zzbCheckForRogues )
+    if ( zzbCheckForRogues > 0 )
     {
       xxCheckEntryActors();
+      if ( zzCheckForRogues > 1 )
+      {
+        if ( zzMySpawnNotify != None )
+        {
+          if ( zzMySpawnNotify.MyRI != self )
+          {
+            xxDoClientMsg(1,23,"CheckClient");
+          }
+        }
+        else
+        {
+          xxDoClientMsg(1,22,"CheckClient");
+        }
+      }
     }
     zzbHasVR = false;
     zzb = xxTestPlayer();
     zzbGlobalCheckFlags.zzbCheckPlayer = zzbGlobalCheckFlags.zzbCheckPlayer || zzb;
     if ( zzb )
     {
-      xxDoClientMsg(1,8,"");
-      GotoState('None');
+      xxDoClientMsg(1,8,"CheckClient");
+      GotoState('');
       return;
     }
     zzb = xxTestConsole();
     zzbGlobalCheckFlags.zzbCheckConsole = zzbGlobalCheckFlags.zzbCheckConsole || zzb;
     if ( zzb )
     {
-      xxDoClientMsg(1,9,"");
-      GotoState('None');
+      xxDoClientMsg(1,9,"CheckClient");
+      GotoState('');
     }
     zzbHasVR = True;
     zzMyVR = zzMyPlayer.ViewRotation;
@@ -1108,7 +1151,11 @@ simulated state xxClientWorking
     {
       if ( zzMyPlayer.DesiredFOV<float(80) || zzMyPlayer.FovAngle<float(80) )
       {
-        zzMyPlayer.SetDesiredFOV( 90.0 );
+        zzMyPlayer.SetDesiredFOV(zzMyFoV);
+      }
+      else
+      {
+        zzMyFOV = zzMyPlayer.DesiredFOV;
       }
     }
   }
@@ -1118,7 +1165,7 @@ simulated state xxClientWorking
     if (  !zzbClientMsgWaiting )
     {
       xxDoClientMsg(1,16,"");
-      GotoState('None');
+      GotoState('');
     }
   }
 Begin:

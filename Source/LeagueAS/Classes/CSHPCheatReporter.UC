@@ -159,6 +159,9 @@ function string xxDecodeCheatID (int zzCheatID)
     case 15:
     return "(Nobots Bot)";
     break;
+    case 16:
+    return "(Animation Taunts)";
+    break;
     default:
     return "(Unknown Cheat)";
     break;

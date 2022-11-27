@@ -15,17 +15,20 @@ function Mutate (string MutateString, PlayerPawn Sender)
   Super.Mutate(MutateString,Sender);
 }
 
-function MutatorTakeDamage (out int actualDamage, Pawn Victim, Pawn instigatedBy, out Vector HitLocation, out Vector Momentum, name DamageType)
+function MutatorTakeDamage( out int actualDamage, Pawn Victim, Pawn instigatedBy, out vector HitLocation, out vector Momentum, name DamageType )
 {
   local LeagueAS_Inventory i;
 
   i = LeagueAS_Inventory(Victim.FindInventoryType(Class'LeagueAS_Inventory'));
-  if ( i != None )
+  if ( i!=None )
   {
-    i.InventoryTakeDamage(actualDamage,Victim,instigatedBy,HitLocation,Momentum,DamageType);
+    i.InventoryTakeDamage( actualDamage, Victim, instigatedBy, HitLocation, Momentum, DamageType );
+  }
+  if ( NextDamageMutator!=None )
+  {
+    NextDamageMutator.MutatorTakeDamage( actualDamage, Victim, instigatedBy, HitLocation, Momentum, DamageType );
   }
 }
-
 event PreBeginPlay ()
 {
   LeagueAssaultGame = LeagueAssault(Level.Game);

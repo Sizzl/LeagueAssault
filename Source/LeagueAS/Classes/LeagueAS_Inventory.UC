@@ -25,7 +25,6 @@ event Spawned ()
 {
   PlayerOwner = Pawn(Owner);
   LeagueAssaultGame = LeagueAssault(Level.Game);
-  SaveConfig();
 }
 
 exec function StartMatch ()

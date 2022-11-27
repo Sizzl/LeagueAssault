@@ -1544,26 +1544,26 @@ event PreBeginPlay ()
   {
     ServerSideModule = Spawn(SSMClass);
   }
-  ServerSideModule.LeagueAssaultGame = self;
+  ServerSideModule.LeagueAssaultGame = Self;
   SubVersionStr = ServerSideModule.SubVersionStr;
   ServerSideModule.OnStart();
   LeagueASGameReplicationInfo = LeagueAS_GameReplicationInfo(GameReplicationInfo);
-  Class'TeamCannon'.Default.Health = 100;
-  Class'MinigunCannon'.Default.Health = 100;
+  Class'TeamCannon'.default.Health = 100;
+  Class'MinigunCannon'.default.Health = 100;
   if ( bStandardise )
   {
-    bForceRespawn = True;
-    bHardCoreMode = True;
-    bChallengeMode = False;
-    bMultiWeaponStay = True;
-    AirControl = 0.34999999;
-    SetGameSpeed(1.0);
+    bHardCoreMode = true;
+    bChallengeMode = false;
+    bMultiWeaponStay = true;
+    AirControl = 0.35;
+    SetGameSpeed( 1.0 );
   }
   if ( bMatchMode )
   {
     bPracticeMode = false;
     bPlayersBalanceTeams = false;
   }
+  bForceRespawn = true;
   MaxCommanders = 0;
 }
 
@@ -1988,14 +1988,17 @@ defaultproperties
     bEnableCSHP=True
     bStandardise=True
     bAutoPausing=True
-    MaxPauseTime=60
+    MaxPauseTime=180
+    PauseLeadInOutTime=5
     MatchLength=14
     FirstMapStartTime=300
     SubsequentMapStartTime=60
     TeamNameRed="Red"
     TeamNameBlue="Blue"
     ModeratorPassword="moderator"
-    VersionStr="1.33"
+    PrivateString="LOCKED - PRIVATE"
+    PublicString="OPEN - PUBLIC"
+    VersionStr="1.34"
     AttackMessage="Assault the enemy base!"
     WinMessage="and win!"
     bForceRespawn=True
